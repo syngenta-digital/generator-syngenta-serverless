@@ -1,9 +1,10 @@
 const yaml = require('js-yaml');
 const path = require('path');
 const fs = require('fs');
+const serverless_helper = require('../helpers/serverless');
 const default_package = require('../templates/serverless/package');
 const default_custom = require('../templates/serverless/custom');
-const serverless_helper = require('../helpers/serverless');
+const default_provider = require('../templates/serverless/provider');
 
 class Serverless {
     constructor(serverless) {
@@ -15,10 +16,12 @@ class Serverless {
         }
         this._serverless = {
             app: serverless.app || (doc ? doc.app : 'app'),
-            service: serverless.service || (doc ? doc.service : 'app'),
+            service: serverless.service || (doc ? doc.service : 'service'),
             package: serverless.package || (doc ? doc.package : default_package),
             custom: serverless.custom || (doc ? doc.custom : default_custom),
-            functions: serverless.custom || (doc ? doc.functions : []),
+            functions: serverless.functions || (doc ? doc.functions : []),
+            provider: serverless.provider || (doc ? doc.provider : default_provider),
+            plugins: serverless.custom || (doc ? doc.plugins : [])
         };
     }
 
@@ -46,12 +49,36 @@ class Serverless {
         this._serverless.package = _package;
     }
 
+    get custom() {
+        return this._serverless.custom;
+    }
+
+    set custom(_custom) {
+        this._serverless.custom = _custom;
+    }
+
     get functions() {
         return this._serverless.functions;
     }
 
     set functions(_functions) {
         this._serverless.functions = _functions;
+    }
+
+    get provider() {
+        return this._serverless.provider;
+    }
+
+    set provider(_provider) {
+        this._serverless.provider = _provider;
+    }
+
+    get plugins() {
+        return this._serverless.plugins;
+    }
+
+    set plugins(_plugins) {
+        this._serverless.plugins = _plugins;
     }
 
     async init(app, service) {
@@ -63,20 +90,34 @@ class Serverless {
         )
     }
 
-    async addFunction(args) {
+    async addFunction(args) { 
         const new_function = await serverless_helper.addFunction(args);
-        this._serverless.functions.push(new_function);
+        this._serverless.functions[args.hash_type] = new_function;
+        return true;
     }
 
-    merge(updatedData) {
-        // Disallow changes from system generated variables
-        const updatedKeys = Object.keys(this._serverless);
-        updatedKeys.forEach((prop) => {
-            if (Object.prototype.hasOwnProperty.call(updatedData, prop)) {
-                this._serverless[prop] = updatedData[prop];
-            }
-        });
+    async addIamRole(args) {
+        // TODO: not sure how to pass path here?
+        if(!args || !args.path) throw new Error("path required")
+        try {
+            const new_iam_statement = await serverless_helper.addIamRole(args.path);
+            if(!this._serverless.provider.iamRoleStatements) this._serverless.provider.iamRoleStatements = [];
+            this._serverless.provider.iamRoleStatements.push(new_iam_statement);
+            return true;
+        } catch(e) {
+            throw new Error(e);
+        }
     }
+
+    // merge(updatedData) {
+    //     // Disallow changes from system generated variables
+    //     const updatedKeys = Object.keys(this._serverless);
+    //     updatedKeys.forEach((prop) => {
+    //         if (Object.prototype.hasOwnProperty.call(updatedData, prop)) {
+    //             this._serverless[prop] = updatedData[prop];
+    //         }
+    //     });
+    // }
 
     export() {
         return this._serverless;
