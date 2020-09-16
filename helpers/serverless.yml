@@ -43,20 +43,10 @@ resources: null
 functions:
   v1-apigateway-handler:
     name: '${self:provider.stackTags.name}-v1-apigateway-handler'
-    description: API Router handler
+    description: Create default templates
     handler: application/v1/controller/apigateway/_router.route
-    provisionedConcurrency: override_me
-    memorySize: override_me
+    memorySize: 256
     timeout: 30
-    events:
-      - http:
-          path: /
-          method: ANY
-          cors: override_me
-      - http:
-          path: '/{proxy+}'
-          method: ANY
-          cors: override_me
 plugins:
   - serverless-plugin-bind-deployment-id
   - serverless-offline
