@@ -1,11 +1,19 @@
 const fs = require('fs');
 const yaml = require('js-yaml');
-const formatter = require('esformatter');
 const logger = require('../helpers/logger');
 
 exports.create_directory = async (path) => {
-    if (!fs.existsSync(path)){
+    if (!fs.existsSync(path)) {
         fs.mkdirSync(path);
+    }
+}
+
+exports.delete_direcotry = async (path) => {
+    if (fs.existsSync(path)) {
+        fs.rmdir(path, (err) => {
+            if (err) throw new Error(err);
+            Promise.resolve(true);
+        });
     }
 }
 
@@ -18,7 +26,7 @@ exports.write_yaml = async (target_path, json) => {
         if (err) {
             Promise.resolve(false);
         }
-        
+
         Promise.resolve(true);
     });
 }
@@ -28,7 +36,7 @@ exports.write_file = async (path, data) => {
         if (err) {
             Promise.resolve(false);
         }
-        
+
         Promise.resolve(true);
     });
 }
@@ -37,12 +45,12 @@ exports.delete_file = async (path) => {
     try {
         return fs.unlinkSync(path)
         //file removed
-      } catch(err) {
+    } catch (err) {
         logger.error(err, false, false);
-      }
+    }
 }
 
-exports.file_exists = (path) => {
+exports.path_exists = (path) => {
     return new Promise(resolve => {
         fs.access(path, (err) => {
             if (!err) {
@@ -52,5 +60,4 @@ exports.file_exists = (path) => {
             resolve(false);
         });
     })
-
 }

@@ -1,7 +1,6 @@
-const {assert} = require('chai');
+const { assert } = require('chai');
 const path = require('path');
 require('chai').should();
-const expect = require('chai').expect;
 const mock = require('../mock/data');
 const file = require('../../helpers/file');
 const ServerlessLogic = require('../../logic/serverless')
@@ -70,11 +69,12 @@ describe('Test Serverless Generator', async () => {
     });
 
     describe('#addIamRole', () => {
-        const path = './aws/resources/apigateway.yml';
+        const _path = './aws/resources/apigateway.yml';
         it('add iam role', () => {
             return new Promise(async resolve => {
                 await _serverless.addIamRole({
-                    path
+                    path: _path,
+                    service: 'ddb'
                 })
                 resolve();
             })
@@ -82,9 +82,19 @@ describe('Test Serverless Generator', async () => {
         describe('iam role was created properly', () => {
             it('path', () => {
                 const exported = _serverless.export();
-                assert.equal(exported.provider.iamRoleStatements[0], `\${file(${path})}`);
+                assert.equal(exported.provider.iamRoleStatements[0], `\${file(${_path})}`);
             });
-        })
+            it('was created in iamroles directory', async () => {
+                return new Promise(async resolve => {
+                    const exists = await file.path_exists(`${path.join(__dirname, '../../')}/aws/iamroles/dynamodb.yml`);
+                    assert.equal(exists, true);
+                    resolve();
+                })
+
+                // const exported = _serverless.export();
+                // assert.equal(exported.provider.iamRoleStatements[0], `\${file(${path})}`);
+            });
+        });
     });
 
     describe('#cleanup', () => {
@@ -92,7 +102,8 @@ describe('Test Serverless Generator', async () => {
             return new Promise(async resolve => {
                 // TODO: this path stuff is way too confusing need to somehow reference parent dir.
                 await file.delete_file(`${path.join(__dirname, '../../')}/serverless.yml`);
-                const exists = await file.file_exists(`${path.join(__dirname, '../../')}/serverless.yml`);
+                // await file.delete_direcotry(`${path.join(__dirname, '../../')}aws`);
+                const exists = await file.path_exists(`${path.join(__dirname, '../../')}/serverless.yml`);
                 assert.equal(exists, false);
                 resolve();
             })

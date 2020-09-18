@@ -11,7 +11,7 @@ class Serverless {
         let doc = null;
         try {
             doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '../serverless.yml')}`, 'utf8'));
-        } catch(e) {
+        } catch (e) {
             console.warn('couldnt find root serverless file, no errors will continue.')
         }
         this._serverless = {
@@ -84,13 +84,14 @@ class Serverless {
     async init(app, service) {
         this._serverless.app = app;
         this._serverless.service = service;
+        // create all the directories well need
         await serverless_helper.init(
             app,
             service
         )
     }
 
-    async addFunction(args) { 
+    async addFunction(args) {
         const new_function = await serverless_helper.addFunction(args);
         this._serverless.functions[args.hash_type] = new_function;
         return true;
@@ -98,13 +99,13 @@ class Serverless {
 
     async addIamRole(args) {
         // TODO: not sure how to pass path here?
-        if(!args || !args.path) throw new Error("path required")
+        if (!args || !args.path) throw new Error("path required")
         try {
-            const new_iam_statement = await serverless_helper.addIamRole(args.path);
-            if(!this._serverless.provider.iamRoleStatements) this._serverless.provider.iamRoleStatements = [];
+            const new_iam_statement = await serverless_helper.addIamRole(args.path, args.service || 'ddb', args.api_name, args.bucket_name);
+            if (!this._serverless.provider.iamRoleStatements) this._serverless.provider.iamRoleStatements = [];
             this._serverless.provider.iamRoleStatements.push(new_iam_statement);
             return true;
-        } catch(e) {
+        } catch (e) {
             throw new Error(e);
         }
     }
