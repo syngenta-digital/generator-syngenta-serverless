@@ -90,9 +90,6 @@ describe('Test Serverless Generator', async () => {
                     assert.equal(exists, true);
                     resolve();
                 })
-
-                // const exported = _serverless.export();
-                // assert.equal(exported.provider.iamRoleStatements[0], `\${file(${path})}`);
             });
         });
     });
