@@ -5,111 +5,280 @@ const mock = require('../mock/data');
 const file = require('../../helpers/file');
 const neo4j = require('../../helpers/neo4j');
 const packagejson = require('../../helpers/package-json');
+const logger = require('../../helpers/logger');
 const ServerlessLogic = require('../../logic/serverless');
+const { addPackage, addScript, create: create_package_json, read_me, delete_me } = require('../../helpers/package-json');
+const base_temp_path = `${path.join(__dirname, '../../')}/temp`;
 
 describe('Test Serverless Generator', () => {
     let _serverless = new ServerlessLogic({});
-    before((done) => {
-
-        describe('Test Package Json Helper', async () => {
-            describe('#create', () => {
-              it('create', () => {
-                return new Promise(async resolve => {
-                  await delete_me();
-                  await create_package_json(`test-remove`);
-                  resolve();
-                })
+    before(async () => {
+        logger.log('====== START ======')
+        await file.create_directory(`${base_temp_path}`);
+    })
+    after(async () => {
+        // TODO: this path stuff is way too confusing need to somehow reference parent dir.
+        await file.delete_file(`${path.join(__dirname, '../../')}/serverless.yml`);
+        await file.delete_file(`${path.join(__dirname, '../../')}/package2.json`);
+        await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
+        await file.force_delete_directory(`${path.join(__dirname, '../../')}application`);
+        logger.log('====== COMPLETE =====')
+    })
+    describe('Test File Helper', async () => {
+        describe('#file', () => {
+          it('create_directory', () => {
+            return new Promise(async resolve => {
+              await file.create_directory(`${base_temp_path}`);
+              resolve();
+            })
+          });
+          describe('write_file', () => {
+            it('write file', () => {
+              return new Promise(async resolve => {
+                await file.write_file(`${base_temp_path}/test1.json`, JSON.stringify(mock.properties.serverless_json, null, 4));
+                const does_exist = await file.path_exists(`${base_temp_path}/test1.json`);
+                assert(does_exist.toString(), 'true');
+                resolve();
               });
-              describe('#addScripts', () => {
-                it('add Scripts Array', () => {
-                  return new Promise(async resolve => {
-          
-                      const scripts = [
-                          {
-                              name: 'start',
-                              value: 'concurrently "docker-compose -f aws/local/neo4j.yml up -d" "serverless offline start --stage local --aws_envs local --profile local --region us-east-2"'
-                          },
-                          {
-                              name: 'version',
-                              value: "serverless invoke local --function v1-console-database-versioner --stage local --aws_envs local --region us-east-2"
-                          }
-                      ]
-                  
-                      await addScript(scripts);
-                      const packagejson = await read_me();
-                      assert(Object.keys(packagejson.scripts).length, 6);
-                      resolve();
-                  });
-                });
-                it('add Scripts single', () => {
-                  return new Promise(async resolve => {
-          
-                      const script =
+            });
+            it('write yaml', () => {
+              return new Promise(async resolve => {
+                await file.write_yaml(`${base_temp_path}/test1.yml`, JSON.stringify(mock.properties.serverless_json, null, 4));
+                const does_exist = await file.path_exists(`${base_temp_path}/test1.yml`);
+                assert(does_exist.toString(), 'true');
+                resolve();
+              });
+            });
+            it('read yaml', () => {
+              return new Promise(async resolve => {
+                const read_yaml = await file.read_yaml(`${base_temp_path}/test1.yml`);
+                const _json = JSON.parse(read_yaml);
+                assert(_json.app, 'override_me');
+                assert(_json.service, 'override_me');
+                resolve();
+              });
+            });
+            it('file exists', () => {
+              return new Promise(async resolve => {
+                const does_exist = await file.path_exists(`${base_temp_path}/test1.yml`);
+                assert(does_exist.toString(), 'true');
+                resolve();
+              });
+            })
+            it('delete file', () => {
+              return new Promise(async resolve => {
+                const does_exist = await file.path_exists(`${base_temp_path}/test1.yml`);
+                assert(does_exist.toString(), 'true');
+                await file.delete_file(`${base_temp_path}/test1.yml`);
+                await file.delete_file(`${base_temp_path}/test1.json`);
+                resolve();
+              });
+            });
+            it('delete driectory', () => {
+              return new Promise(async resolve => {
+                await file.force_delete_directory(`${base_temp_path}`);
+                resolve();
+              });
+            });
+          })
+        });
+      });
+      describe('Test Package Json Helper', async () => {
+        describe('#create', () => {
+          it('create', () => {
+            return new Promise(async resolve => {
+              await delete_me();
+              await create_package_json(`test-remove`);
+              resolve();
+            })
+          });
+          describe('#addScripts', () => {
+            it('add Scripts Array', () => {
+              return new Promise(async resolve => {
+      
+                  const scripts = [
                       {
-                          name: 'test2',
+                          name: 'start',
                           value: 'concurrently "docker-compose -f aws/local/neo4j.yml up -d" "serverless offline start --stage local --aws_envs local --profile local --region us-east-2"'
+                      },
+                      {
+                          name: 'version',
+                          value: "serverless invoke local --function v1-console-database-versioner --stage local --aws_envs local --region us-east-2"
                       }
-                  
-                      await addScript(script);
-                      const packagejson = await read_me();
-                      assert(Object.keys(packagejson.scripts).length, 7);
-                      resolve();
-                  });
-                });
+                  ]
+              
+                  await addScript(scripts);
+                  const packagejson = await read_me();
+                  assert(Object.keys(packagejson.scripts).length, 6);
+                  resolve();
               });
-              describe('#addPackages', () => {
-                  it('add packages Array', () => {
-                    return new Promise(async resolve => {
-                        const packages = [
-                              {
-                                  name: 'test-npm-package',
-                                  version: '1.5.4',
-                                  isDev: true
-                              },
-                              {
-                                  name: 'test-npm-package2'
-                              },
-                              {
-                                  name: 'test-npm-package3',
-                                  version: '1.5.6'
-                              }
-                        ]
-                    
-                        await addPackage(packages);
-                        const packagejson = await read_me();
-                        assert(packagejson.devDependencies['test-npm-package'], '1.5.4');
-                        assert(packagejson.dependencies['test-npm-package2'], '*');
-                        assert(packagejson.dependencies['test-npm-package3'], '1.5.6');
-                        resolve();
-                    });
-                  });
-                  it('add packages single', () => {
-                    return new Promise(async resolve => {
-          
-                          const package =
+            });
+            it('add Scripts single', () => {
+              return new Promise(async resolve => {
+      
+                  const script =
+                  {
+                      name: 'test2',
+                      value: 'concurrently "docker-compose -f aws/local/neo4j.yml up -d" "serverless offline start --stage local --aws_envs local --profile local --region us-east-2"'
+                  }
+              
+                  await addScript(script);
+                  const packagejson = await read_me();
+                  assert(Object.keys(packagejson.scripts).length, 7);
+                  resolve();
+              });
+            });
+          });
+          describe('#addPackages', () => {
+              it('add packages Array', () => {
+                return new Promise(async resolve => {
+                    const packages = [
                           {
                               name: 'test-npm-package',
-                              version: '1.5.4'
+                              version: '1.5.4',
+                              isDev: true
+                          },
+                          {
+                              name: 'test-npm-package2'
+                          },
+                          {
+                              name: 'test-npm-package3',
+                              version: '1.5.6'
                           }
-                    
-                          await addPackage(package);
-                          const packagejson = await read_me();
-                          assert(packagejson.dependencies['test-npm-package'], '1.5.4');
-                          resolve();
-                    });
+                    ]
+                
+                    await addPackage(packages);
+                    const packagejson = await read_me();
+                    assert(packagejson.devDependencies['test-npm-package'], '1.5.4');
+                    assert(packagejson.dependencies['test-npm-package2'], '*');
+                    assert(packagejson.dependencies['test-npm-package3'], '1.5.6');
+                    resolve();
+                });
+              });
+              it('add packages single', () => {
+                return new Promise(async resolve => {
+      
+                      const package =
+                      {
+                          name: 'test-npm-package',
+                          version: '1.5.4'
+                      }
+                
+                      await addPackage(package);
+                      const packagejson = await read_me();
+                      assert(packagejson.dependencies['test-npm-package'], '1.5.4');
+                      resolve();
+                });
+              });
+            });
+            describe('#cleanup', () => {
+              it('remove', () => {
+                  return new Promise(async resolve => {
+                      await delete_me();
+                      resolve();
                   });
                 });
+            })
+        });
+    });
+    describe('Test Serverless Generator', () => {
+        describe('Test Package Json Helper', async () => {
+            describe('#create', () => {
+                it('create', () => {
+                return new Promise(async resolve => {
+                    await delete_me();
+                    await create_package_json(`test-remove`);
+                    resolve();
+                })
+                });
+                describe('#addScripts', () => {
+                    it('add Scripts Array', () => {
+                        return new Promise(async resolve => {
+                
+                            const scripts = [
+                                {
+                                    name: 'start',
+                                    value: 'concurrently "docker-compose -f aws/local/neo4j.yml up -d" "serverless offline start --stage local --aws_envs local --profile local --region us-east-2"'
+                                },
+                                {
+                                    name: 'version',
+                                    value: "serverless invoke local --function v1-console-database-versioner --stage local --aws_envs local --region us-east-2"
+                                }
+                            ]
+                        
+                            await addScript(scripts);
+                            const packagejson = await read_me();
+                            assert(Object.keys(packagejson.scripts).length, 6);
+                            resolve();
+                        });
+                    });
+                    it('add Scripts single', () => {
+                        return new Promise(async resolve => {
+                            const script =
+                            {
+                                name: 'test2',
+                                value: 'concurrently "docker-compose -f aws/local/neo4j.yml up -d" "serverless offline start --stage local --aws_envs local --profile local --region us-east-2"'
+                            }
+                        
+                            await addScript(script);
+                            const packagejson = await read_me();
+                            assert(Object.keys(packagejson.scripts).length, 7);
+                            resolve();
+                        });
+                    });
+                });
+                describe('#addPackages', () => {
+                    it('add packages Array', () => {
+                        return new Promise(async resolve => {
+                            const packages = [
+                                    {
+                                        name: 'test-npm-package',
+                                        version: '1.5.4',
+                                        isDev: true
+                                    },
+                                    {
+                                        name: 'test-npm-package2'
+                                    },
+                                    {
+                                        name: 'test-npm-package3',
+                                        version: '1.5.6'
+                                    }
+                            ]
+                        
+                            await addPackage(packages);
+                            const packagejson = await read_me();
+                            assert(packagejson.devDependencies['test-npm-package'], '1.5.4');
+                            assert(packagejson.dependencies['test-npm-package2'], '*');
+                            assert(packagejson.dependencies['test-npm-package3'], '1.5.6');
+                            resolve();
+                        });
+                    });
+                    it('add packages single', () => {
+                    return new Promise(async resolve => {
+                            const package =
+                            {
+                                name: 'test-npm-package',
+                                version: '1.5.4'
+                            }
+                    
+                            await addPackage(package);
+                            const packagejson = await read_me();
+                            assert(packagejson.dependencies['test-npm-package'], '1.5.4');
+                            resolve();
+                        });
+                    });
+                });
                 describe('#cleanup', () => {
-                  it('remove', () => {
-                      return new Promise(async resolve => {
-                          await delete_me();
-                          resolve();
-                      });
+                    it('remove', () => {
+                        return new Promise(async resolve => {
+                            await delete_me();
+                            resolve();
+                        });
                     });
                 })
             });
-          });
-          
+            });
+            
         describe('#serverless', () => {
             it('create serverless', () => {
                 return new Promise(async resolve => {
@@ -384,11 +553,9 @@ describe('Test Serverless Generator', () => {
     
         describe('#Resources', () => {
             describe('#neo4j', () => {
-                it('init', () => {
-                    return new Promise(async (resolve) => {
-                        await neo4j.init();
-                        resolve();
-                    })
+                before(async () => {
+                    console.log('inside neo4j before')
+                    await neo4j.init();
                 });
                 it('package json is correct', () => {
                     return new Promise(async (resolve) => {
@@ -408,43 +575,27 @@ describe('Test Serverless Generator', () => {
                         const exists = await file.path_exists(`${path.join(__dirname, '../../')}/db_versions`)
                         assert(exists, true);
                         resolve();
-                    })
+                    });
                 });
                 it('aws/local/neo4j/yml exists', () => {
                     return new Promise(async (resolve) => {
                         // await neo4j.init();
                         resolve();
-                    })
+                    });
                 });
                 it('db-versioner function created correctly', () => {
                     return new Promise(async (resolve) => {
                         // await neo4j.init();
                         resolve();
-                    })
+                    });
                 });
                 it('environment variables are set', () => {
                     return new Promise(async (resolve) => {
                         // await neo4j.init();
                         resolve();
-                        done();
-                    })
+                    });
                 });
             });
         });
-
-        after(() => {
-            it('delete serverless', () => {
-                return new Promise(async resolve => {
-                    console.log("HIT AFTER FUNCTION!")
-                    // TODO: this path stuff is way too confusing need to somehow reference parent dir.
-                    await file.delete_file(`${path.join(__dirname, '../../')}/serverless.yml`);
-                    await file.delete_file(`${path.join(__dirname, '../../')}/package2.json`);
-                    await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
-                    await file.force_delete_directory(`${path.join(__dirname, '../../')}application`);
-                    resolve();
-                })
-            })
-        })
-    })
-    
+    });
 });

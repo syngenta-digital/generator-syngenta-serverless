@@ -49,7 +49,7 @@ const _addEnvironmentVariables = async () => {
         // const 
         await file.write_yaml(_path, local_env_template);
     }
-
+    console.log('attempting to read path now', _path)
     const local_env = await file.read_yaml(_path);
     // console.log('logging local_env_template', local_env_template);
     local_env.environment.NEO4J_HOST = '${self:custom.neo4j_config.${self:provider.stage}.host}';

@@ -26,7 +26,8 @@ const _create_directory = async (path) => {
 
 exports.doesLocalDirectoriesExist = async (directories) => {
     for (const dir of directories) {
-        const does_exist = await _path_exists(dir)
+        const does_exist = await _path_exists(dir);
+        console.log('logging dir', dir, 'logging if exists', does_exist)
         if (!does_exist) await _create_directory(`${path.join(__dirname, '..')}/${dir}`);
     }
 
