@@ -82,5 +82,9 @@ exports.read_me = async () => {
 
 exports.delete_me = async () => {
     const _path = config.DEBUG ? 'package2.json' : 'package.json';
-    return file.delete_file(_path);
+    try {
+        return file.delete_file(_path);
+    } catch(e) {
+        return true;
+    }
 }

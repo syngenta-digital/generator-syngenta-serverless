@@ -3,7 +3,9 @@ const fs = require('fs');
 const yaml = require('js-yaml');
 const path = require('path');
 const file = require('./file');
-
+const formatter = require('esformatter');
+const packagejson_helper  = require('../helpers/package-json');
+const {default: router_template}  = require('../templates/controller/apigateway/router')
 const { ddbTemplate, s3Template, snsTemplate, sqsTemplate, ssmTemplate } = require('../templates/aws/iamRoles');
 const SERVERLESS_LOCATION = `${path.join(__dirname, '../serverless.yml')}`;
 const IAM_ROLES_LOCATION = `${path.join(__dirname, '../aws/iamroles')}`;
@@ -14,6 +16,7 @@ const _initServerless = (app, service) => {
         let doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/templates/serverless/serverless.yml`, 'utf8'));
         doc.app = app;
         doc.service = service;
+        await _createRouterFunction();
         // TODO: i think this will need to be changed if this is going to be a package
         resolve(file.write_yaml(SERVERLESS_LOCATION, doc));
     })
@@ -31,6 +34,23 @@ const _apigatewayHandler = (doc, version, type, name, executor = 'run', memorySi
     doc.functions['v1-apigateway-handler'] = apigateway_function;
     return apigateway_function;
 }
+
+const _createRouterFunction = async () => {
+    const directories = [
+        'application',
+        'application/v1',
+        'application/v1/controller',
+        'application/v1/controller/apigateway',
+    ]
+    await file.doesLocalDirectoriesExist(directories);
+    const formatted = formatter.format(router_template);
+    const package = {
+        name: 'syngenta-lambda-client'
+    };
+    await packagejson_helper.addPackage(package);
+    return file.write_file(`${path.join(__dirname, '..')}/application/v1/controller/apigateway/_router.js`, formatted)
+}
+
 
 const functionHashMapper = new Map([
     ['v1-apigateway-handler', _apigatewayHandler],

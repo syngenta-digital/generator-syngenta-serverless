@@ -1,5 +1,6 @@
 const path = require('path');
 const file = require('./file');
+const mock = require('../test/mock/data');
 const serverless_helper = require('../helpers/serverless');
 const packagejson_helper = require('../helpers/package-json');
 const neo4j_local_template = require('../templates/aws/local/neo4j');
@@ -44,18 +45,15 @@ const _addEnvironmentVariables = async () => {
     await file.doesLocalDirectoriesExist(directories);
     const _path = `${path.join(__dirname, '..')}/aws/envs/local.yml`;
     const local_env_exists = await file.path_exists(_path);
-    console.log('logging if exists?', local_env_exists)
     if(!local_env_exists) {
         // const 
         await file.write_yaml(_path, local_env_template);
     }
-    console.log('attempting to read path now', _path)
     const local_env = await file.read_yaml(_path);
-    // console.log('logging local_env_template', local_env_template);
-    local_env.environment.NEO4J_HOST = '${self:custom.neo4j_config.${self:provider.stage}.host}';
-    local_env.environment.NEO4J_USER = '${self:custom.neo4j_config.${self:provider.stage}.user}';
-    local_env.environment.NEO4J_PASSWORD = '${self:custom.neo4j_config.${self:provider.stage}.password}';
-    local_env.environment.NEO4J_ENCRYPTED = '${self:custom.neo4j_config.${self:provider.stage}.encrypted}';
+    local_env.environment.NEO4J_HOST = mock.properties.neo4j_host;
+    local_env.environment.NEO4J_USER = mock.properties.neo4j_user;
+    local_env.environment.NEO4J_PASSWORD = mock.properties.neo4j_password;
+    local_env.environment.NEO4J_ENCRYPTED = mock.properties.neo4j_encrypted;
 
     return file.write_yaml(_path, local_env);
 }
@@ -73,9 +71,9 @@ const _createVersionerFunction = async () => {
 }
 
 const _addNeo4jDatabaseVersioner = async () => {
-    await file.create_directory(`${path.join(__dirname, '..')}/db_versions`);
-    // add syngenta-database-versioner to package json
-    // (consists of name, an optional version (Will use * if none provided.), and isDev (defaults to false))
+    if(!await file.path_exists(`${path.join(__dirname, '..')}/db_versions`)) {
+        await file.create_directory(`${path.join(__dirname, '..')}/db_versions`);
+    }
     const packages = [
         {
             name: 'neo4j-driver',
@@ -87,7 +85,6 @@ const _addNeo4jDatabaseVersioner = async () => {
         }
     ]
     await packagejson_helper.addPackage(packages);
-    // now create db-versioner function
     return _createVersionerFunction();
 
 }

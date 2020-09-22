@@ -17,6 +17,10 @@ const mock_console_name = 'handler';
 const mock_console_executor = 'run';
 const mock_console_memorySize = 256;
 const mock_console_timeout = 30;
+const mock_neo4j_host = '${self:custom.neo4j_config.${self:provider.stage}.host}';
+const mock_neo4j_user = '${self:custom.neo4j_config.${self:provider.stage}.user}';
+const mock_neo4j_password = '${self:custom.neo4j_config.${self:provider.stage}.password}';
+const mock_neo4j_encrypted = false;
 
 exports.properties = {
     guid: mock_guid,
@@ -34,5 +38,9 @@ exports.properties = {
     console_executor: mock_console_executor,
     console_memorySize: mock_console_memorySize,
     console_timeout: mock_console_timeout,
-    serverless_json: mock_serverless_json
+    serverless_json: mock_serverless_json,
+    neo4j_host: mock_neo4j_host,
+    neo4j_user: mock_neo4j_user,
+    neo4j_password: mock_neo4j_password,
+    neo4j_encrypted: mock_neo4j_encrypted
 }

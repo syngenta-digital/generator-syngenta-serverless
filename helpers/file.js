@@ -1,8 +1,23 @@
 const fs = require('fs');
 const yaml = require('js-yaml');
+const { resolve } = require('path');
 const path = require('path');
 const rimraf = require("rimraf");
 const logger = require('../helpers/logger');
+
+const _read_file = (path, do_not_parse_json) => {
+    return new Promise((resolve) => {
+        fs.readFile(path, null, (err, data) => {
+            if (err) {
+                logger.warn(err);
+                resolve(null);
+                return;
+            }
+            if(do_not_parse_json) resolve(data);
+            else resolve(JSON.parse(data));
+        });
+    })
+}
 
 const _path_exists = (path) => {
     return new Promise(resolve => {
@@ -16,18 +31,56 @@ const _path_exists = (path) => {
     })
 }
 
-const _create_directory = async (path) => {
-    if (!fs.existsSync(path)) {
-        fs.mkdirSync(path);
-    }
+const _create_directory = path => {
+    // if (!fs.existsSync(path)) {
+    //     fs.mkdirSync(path);
+    // }
+    return new Promise(async resolve => {
+        fs.access(path, (err) => {
+            if (!err) {
+                resolve();
+                return;
+            }
 
-    return true;
+            fs.mkdir(path, null, () => {
+                resolve();
+            })
+        });
+    })
+
+
+    // return true;
+}
+
+const _write_file = (path, data) => {
+    return new Promise(async resolve => {
+        try {
+            fs.writeFile(path, data, null, () => {
+                resolve(true)
+            });
+        } catch (e) {
+            console.log('logging e', e);
+            throw new Error(e);
+        }
+    });
+}
+
+const _write_yaml = (target_path, json) => {
+    return new Promise(async resolve => {
+        fs.writeFile(target_path, yaml.safeDump(json), (err) => {
+            if (err) {
+                logger.warn(err);
+                resolve(false);
+            }
+    
+            resolve(true);
+        });
+    })
 }
 
 exports.doesLocalDirectoriesExist = async (directories) => {
     for (const dir of directories) {
         const does_exist = await _path_exists(dir);
-        console.log('logging dir', dir, 'logging if exists', does_exist)
         if (!does_exist) await _create_directory(`${path.join(__dirname, '..')}/${dir}`);
     }
 
@@ -59,45 +112,22 @@ exports.force_delete_directory = path => {
     })
 }
 
-exports.read_file = (path, do_not_pase_json) => {
-    return new Promise((resolve) => {
-        fs.readFile(path, null, (err, data) => {
-            if (err) {
-                logger.warn(err);
-                resolve(null);
-                return;
-            }
-            if(do_not_pase_json) resolve(data);
-            else resolve(JSON.parse(data));
-        });
-    })
+exports.read_file = (path, do_not_parse_json) => {
+    return _read_file(path, do_not_parse_json)
 }
 
 exports.read_yaml = async (path) => {
-    const exists = await this.read_file(path, true);
+    const exists = await _read_file(path, true);
     if(!exists) return null;
     else return yaml.safeLoad(fs.readFileSync(path, 'utf8'));
 }
 
 exports.write_yaml = async (target_path, json) => {
-    return fs.writeFile(target_path, yaml.safeDump(json), (err) => {
-        if (err) {
-            logger.warn(err);
-            Promise.resolve(false);
-        }
-
-        Promise.resolve(true);
-    });
+    return _write_yaml(target_path, json);
 }
 
 exports.write_file = async (path, data) => {
-    return fs.writeFile(path, data, (err) => {
-        if (err) {
-            Promise.resolve(false);
-        }
-
-        Promise.resolve(true);
-    });
+    return _write_file(path, data)
 }
 
 exports.delete_file = async (path) => {

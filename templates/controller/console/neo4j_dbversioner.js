@@ -1,7 +1,6 @@
 exports.default = `const versioner = require('syngenta-database-versioner');
 
     const _displayLocalOutputs = (params) => {
-        console.log(params);
         return process.exit(0);
     };
     

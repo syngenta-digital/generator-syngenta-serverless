@@ -3,28 +3,43 @@ const path = require('path');
 require('chai').should();
 const mock = require('../mock/data');
 const file = require('../../helpers/file');
+const config = require('../../helpers/config');
 const neo4j = require('../../helpers/neo4j');
 const packagejson = require('../../helpers/package-json');
 const logger = require('../../helpers/logger');
 const ServerlessLogic = require('../../logic/serverless');
 const { addPackage, addScript, create: create_package_json, read_me, delete_me } = require('../../helpers/package-json');
-const base_temp_path = `${path.join(__dirname, '../../')}/temp`;
+const {default: neo4j_db_versioner_template} = require('../../templates/controller/console/neo4j_dbversioner');
+const {default: router_template} = require('../../templates/controller/apigateway/router');
+const base_temp_path = `${path.join(__dirname, '../../')}temp`;
 
 describe('Test Serverless Generator', () => {
     let _serverless = new ServerlessLogic({});
     before(async () => {
-        logger.log('====== START ======')
-        await file.create_directory(`${base_temp_path}`);
+        logger.log('====== START ======');
+        // build package json
+        // await delete_me();
+        await create_package_json(`test-remove`);
+        await file.create_directory(base_temp_path);
+        await _serverless.init(
+            mock.properties.app,
+            mock.properties.service
+        );
+        logger.log('====== STARTUP COMPLETE MOVING ONTO TESTS ======')
     })
     after(async () => {
         // TODO: this path stuff is way too confusing need to somehow reference parent dir.
-        await file.delete_file(`${path.join(__dirname, '../../')}/serverless.yml`);
-        await file.delete_file(`${path.join(__dirname, '../../')}/package2.json`);
-        await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
-        await file.force_delete_directory(`${path.join(__dirname, '../../')}application`);
+        logger.log('====== TESTS COMPLETE MOVING TO CLEANUP ======')
+        if(config.DEBUG) {
+            await file.delete_file(`${path.join(__dirname, '../../')}/serverless.yml`);
+            await file.delete_file(`${path.join(__dirname, '../../')}/package2.json`);
+            await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
+            await file.force_delete_directory(`${path.join(__dirname, '../../')}application`);
+            await file.force_delete_directory(`${path.join(__dirname, '../../')}db_versions`);
+        }
         logger.log('====== COMPLETE =====')
     })
-    describe('Test File Helper', async () => {
+    describe('Test File Helper', () => {
         describe('#file', () => {
           it('create_directory', () => {
             return new Promise(async resolve => {
@@ -83,15 +98,8 @@ describe('Test Serverless Generator', () => {
           })
         });
       });
-      describe('Test Package Json Helper', async () => {
+    describe('Test Package Json Helper', () => {
         describe('#create', () => {
-          it('create', () => {
-            return new Promise(async resolve => {
-              await delete_me();
-              await create_package_json(`test-remove`);
-              resolve();
-            })
-          });
           describe('#addScripts', () => {
             it('add Scripts Array', () => {
               return new Promise(async resolve => {
@@ -171,26 +179,11 @@ describe('Test Serverless Generator', () => {
                 });
               });
             });
-            describe('#cleanup', () => {
-              it('remove', () => {
-                  return new Promise(async resolve => {
-                      await delete_me();
-                      resolve();
-                  });
-                });
-            })
         });
     });
     describe('Test Serverless Generator', () => {
         describe('Test Package Json Helper', async () => {
             describe('#create', () => {
-                it('create', () => {
-                return new Promise(async resolve => {
-                    await delete_me();
-                    await create_package_json(`test-remove`);
-                    resolve();
-                })
-                });
                 describe('#addScripts', () => {
                     it('add Scripts Array', () => {
                         return new Promise(async resolve => {
@@ -268,28 +261,10 @@ describe('Test Serverless Generator', () => {
                         });
                     });
                 });
-                describe('#cleanup', () => {
-                    it('remove', () => {
-                        return new Promise(async resolve => {
-                            await delete_me();
-                            resolve();
-                        });
-                    });
-                })
             });
-            });
+        });
             
         describe('#serverless', () => {
-            it('create serverless', () => {
-                return new Promise(async resolve => {
-                    await _serverless.init(
-                        mock.properties.app,
-                        mock.properties.service
-                    )
-    
-                    resolve();
-                })
-            });
             describe('serverless was created properly', () => {
                 it('app name', () => {
                     const exported = _serverless.export();
@@ -298,6 +273,23 @@ describe('Test Serverless Generator', () => {
                 it('service name', () => {
                     const exported = _serverless.export();
                     assert.equal(exported.service, mock.properties.service);
+                });
+                it('apigateway router function created correctly', () => {
+                    return new Promise(async (resolve) => {
+                        const _path = `${path.join(__dirname, '../../')}/application/v1/controller/apigateway/_router.js`;
+                        const exists = await file.path_exists(_path);
+                        assert(exists, true);
+                        const db_versioner_code = await file.read_file(_path, true)
+                        assert(db_versioner_code.toString(), router_template);
+                        resolve();
+                    });
+                });
+                it('package json is correct', () => {
+                    return new Promise(async (resolve) => {
+                        const _packagejson = await packagejson.read_me();
+                        assert(_packagejson.dependencies['syngenta-lambda-client'], '*');
+                        resolve();
+                    })
                 });
             })
     
@@ -415,7 +407,6 @@ describe('Test Serverless Generator', () => {
                     describe('iam role was created properly', () => {
                         it('path', () => {
                             const exported = _serverless.export();
-                            // console.log('logging exported', exported);
                             assert.equal(exported.provider.iamRoleStatements[2], `\${file(${_path})}`);
                         });
                         it('was created in iamroles directory', () => {
@@ -554,7 +545,7 @@ describe('Test Serverless Generator', () => {
         describe('#Resources', () => {
             describe('#neo4j', () => {
                 before(async () => {
-                    console.log('inside neo4j before')
+                    logger.log('inside neo4j before')
                     await neo4j.init();
                 });
                 it('package json is correct', () => {
@@ -562,10 +553,8 @@ describe('Test Serverless Generator', () => {
                         const _packagejson = await packagejson.read_me();
                         assert(_packagejson.scripts.start, 'concurrently "docker-compose -f aws/local/neo4j.yml up -d" "serverless offline start --stage local --aws_envs local --profile local --region us-east-2"');
                         assert(_packagejson.scripts.version, 'serverless invoke local --function v1-console-database-versioner --stage local --aws_envs local --region us-east-2');
-                        // console.log(_packagejson.dependencies['syngenta-database-versioner'])
-                        // assert(_packagejson.dependencies['syngenta-database-versioner'])
-                        // correct scripts
-                        // correct dependency (syngenta-database-versioner)
+                        assert(_packagejson.dependencies['syngenta-database-versioner'], '1.3.4');
+                        assert(_packagejson.dependencies['neo4j-driver'], '^4.0.2');
                         resolve();
                     })
                 });
@@ -577,21 +566,31 @@ describe('Test Serverless Generator', () => {
                         resolve();
                     });
                 });
-                it('aws/local/neo4j/yml exists', () => {
+                it('aws/local/neo4j.yml exists', () => {
                     return new Promise(async (resolve) => {
-                        // await neo4j.init();
+                        const exists = await file.path_exists(`${path.join(__dirname, '../../')}/aws/local/neo4j.yml`)
+                        assert(exists, true);
                         resolve();
                     });
                 });
                 it('db-versioner function created correctly', () => {
                     return new Promise(async (resolve) => {
-                        // await neo4j.init();
+                        const _path = `${path.join(__dirname, '../../')}/application/v1/controller/console/database_versioner.js`;
+                        const exists = await file.path_exists(_path);
+                        assert(exists, true);
+                        const db_versioner_code = await file.read_file(_path, true)
+                        assert(db_versioner_code.toString(), neo4j_db_versioner_template);
                         resolve();
                     });
                 });
                 it('environment variables are set', () => {
                     return new Promise(async (resolve) => {
-                        // await neo4j.init();
+                        const _path = `${path.join(__dirname, '../../')}aws/envs/local.yml`;
+                        const _env = await file.read_yaml(_path);
+                        assert(_env.environment.NEO4J_HOST, mock.properties.neo4j_host);
+                        assert(_env.environment.NEO4J_USER, mock.properties.neo4j_user);
+                        assert(_env.environment.NEO4J_PASSWORD, mock.properties.neo4j_password);
+                        assert(_env.environment.NEO4J_ENCRYPTED.toString(), mock.properties.neo4j_encrypted.toString());
                         resolve();
                     });
                 });
