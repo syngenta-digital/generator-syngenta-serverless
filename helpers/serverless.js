@@ -147,3 +147,9 @@ exports.addIamRole = async (path, service, api_name, bucket_name) => {
     if (available_services.indexOf(service) > -1) add_to_aws_directory = true;
     return _addIamRole(path, add_to_aws_directory, service, api_name, bucket_name);
 }
+
+exports.addCustom = async (data) => {
+    const doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/serverless.yml`, 'utf8'));
+    doc.custom[data.key] = data.value;
+    await file.write_yaml(SERVERLESS_LOCATION, doc);
+}

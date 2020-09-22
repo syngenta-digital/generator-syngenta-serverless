@@ -58,7 +58,7 @@ describe('Test File Helper', async () => {
       });
       it('delete driectory', () => {
         return new Promise(async resolve => {
-          await file.delete_direcotry(`${base_temp_path}`);
+          await file.force_delete_directory(`${base_temp_path}`);
           resolve();
         });
       });

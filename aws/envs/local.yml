@@ -1,0 +1,24 @@
+environment:
+  APP_NAME: '${self:app}-${self:service}'
+  SERVICE: '${self:app}-${self:service}'
+  STACK: '${self:provider.stackTags.name}'
+  STAGE: '${self:provider.stage}'
+  REGION: '${self:provider.region}'
+  NEO4J_HOST: '${self:custom.neo4j_config.${self:provider.stage}.host}'
+  NEO4J_USER: '${self:custom.neo4j_config.${self:provider.stage}.user}'
+  NEO4J_PASSWORD: '${self:custom.neo4j_config.${self:provider.stage}.password}'
+  NEO4J_ENCRYPTED: '${self:custom.neo4j_config.${self:provider.stage}.encrypted}'
+authorizer:
+  arn: false
+  name: false
+  type: false
+  identitySource: false
+  resultTtlInSeconds: false
+cors:
+  origin: '*'
+  allowCredentials: false
+  headers:
+    - Content-Type
+    - x-master-key
+    - x-api-key
+    - x-user-token
