@@ -1,0 +1,28 @@
+environment:
+  APP_NAME: '${self:app}-${self:service}'
+  SERVICE: '${self:app}-${self:service}'
+  STACK: '${self:provider.stackTags.name}'
+  STAGE: '${self:provider.stage}'
+  REGION: '${self:provider.region}'
+  DB_NAME: grower-tests
+  DB_APP_USER: grower-tests
+  DB_HOST:
+    'Fn::GetAtt':
+      - growertestsDB
+      - Endpoint.Address
+  DB_MASTER_USER: root
+  DB_MASTER_PASS: root_password
+authorizer:
+  arn: false
+  name: false
+  type: false
+  identitySource: false
+  resultTtlInSeconds: false
+cors:
+  origin: '*'
+  allowCredentials: false
+  headers:
+    - Content-Type
+    - x-master-key
+    - x-api-key
+    - x-user-token

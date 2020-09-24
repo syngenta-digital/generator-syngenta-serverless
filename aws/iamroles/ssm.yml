@@ -1,0 +1,6 @@
+Effect: Allow
+Action:
+  - 'ssm:*'
+Resource:
+  - >-
+    arn:aws:ssm:${self:provider.region}:*:parameter/${self:provider.stackTags.name}/*

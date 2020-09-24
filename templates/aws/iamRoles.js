@@ -64,14 +64,14 @@ exports.sqsTemplate = () => {
   }
 }
 
-exports.ssmTemplate = (api_name) => {
+exports.ssmTemplate = () => {
   return {
     Effect: 'Allow',
     Action: [
       'ssm:*'
     ],
     Resource: [
-      `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stage}-${api_name}/*`
+      `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}/*`
     ]
   }
 }

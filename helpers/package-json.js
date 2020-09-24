@@ -4,7 +4,7 @@ const config = require('./config');
 const package_json_template = require('../templates/package');
 const _isPlainObject = (input) => {
     return input && !Array.isArray(input) && typeof input === 'object';
- }
+}
 /**
  * 
  * @param {packages} packages either singular package object or array of package objects. (consists of name, an optional version (Will use * if none provided.), and isDev (defaults to false))
@@ -74,14 +74,18 @@ exports.create = async (project_name) => {
 
     return true;
 }
-
+/**
+ * will return the package.json file as json
+ */
 exports.read_me = async () => {
     const _path = config.DEBUG ? 'package2.json' : 'package.json';
     return file.read_file(`${path.join(__dirname, '..')}/${_path}`)
 }
-
+/**
+ * Will delete the package2.json folder (only works in debug mode)
+ */
 exports.delete_me = async () => {
-    const _path = config.DEBUG ? 'package2.json' : 'package.json';
+    const _path = 'package2.json';
     try {
         return file.delete_file(_path);
     } catch(e) {

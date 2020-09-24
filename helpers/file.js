@@ -1,9 +1,11 @@
 const fs = require('fs');
 const yaml = require('js-yaml');
+const FileSystem = require('pwd-fs');
 const { resolve } = require('path');
 const path = require('path');
 const rimraf = require("rimraf");
 const logger = require('../helpers/logger');
+const pfs = new FileSystem();
 
 const _read_file = (path, do_not_parse_json) => {
     return new Promise((resolve) => {
@@ -78,6 +80,12 @@ const _write_yaml = (target_path, json) => {
     })
 }
 
+const _copy_directory = async (src, dest) => {
+    const does_exist = await _path_exists(dest);
+    if (!does_exist) await pfs.copy(src, dest);
+    return true;
+}
+
 exports.doesLocalDirectoriesExist = async (directories) => {
     for (const dir of directories) {
         const does_exist = await _path_exists(dir);
@@ -89,6 +97,10 @@ exports.doesLocalDirectoriesExist = async (directories) => {
 
 exports.create_directory = async (path) => {
     return _create_directory(path);
+}
+
+exports.copy_directory = async (src, dest) => {
+    return _copy_directory(src, dest);
 }
 
 exports.delete_directory = async (path) => {
@@ -138,8 +150,6 @@ exports.delete_file = async (path) => {
         logger.error(err, false, false);
     }
 }
-
-
 
 exports.path_exists = async (path) => {
     return _path_exists(path);

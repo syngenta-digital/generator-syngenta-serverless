@@ -1,5 +1,5 @@
 {
-    "name": "generator-syngenta-serverless",
+    "name": "test-remove",
     "version": "1.0.0",
     "description": "",
     "main": "app/index.js",
@@ -7,7 +7,10 @@
         "lint": "eslint application/**",
         "sct": "sct",
         "report": "nyc report",
-        "test": "unittest=true nyc mocha --recursive"
+        "test": "unittest=true nyc mocha --recursive",
+        "start": "concurrently \"docker-compose -f aws/local/neo4j.yml up -d\" \"serverless offline start --stage local --aws_envs local --profile local --region us-east-2\"",
+        "version": "serverless invoke local --function v1-console-database-versioner --stage local --aws_envs local --region us-east-2",
+        "test2": "concurrently \"docker-compose -f aws/local/neo4j.yml up -d\" \"serverless offline start --stage local --aws_envs local --profile local --region us-east-2\""
     },
     "author": "",
     "license": "ISC",
@@ -17,7 +20,14 @@
         "fs": "0.0.1-security",
         "js-yaml": "^3.14.0",
         "path": "^0.12.7",
-        "pwd-fs": "^1.2.13"
+        "syngenta-lambda-client": "*",
+        "test-npm-package2": "*",
+        "test-npm-package3": "1.5.6",
+        "test-npm-package": "1.5.4",
+        "neo4j-driver": "^4.0.2",
+        "syngenta-database-versioner": "1.3.4",
+        "mysql": "^2.17.1",
+        "mysql-import": "^4.0.24"
     },
     "devDependencies": {
         "chai": "^4.2.0",
@@ -39,7 +49,8 @@
         "serverless-dynamodb-local": "^0.2.38",
         "serverless-offline": "^5.12.0",
         "serverless-plugin-bind-deployment-id": "~1.2.0",
-        "nyc": "^15.1.0"
+        "nyc": "^15.1.0",
+        "test-npm-package": "1.5.4"
     },
     "nyc": {
         "temp-directory": "./node_modules/.test-metadata/.nyc_output"

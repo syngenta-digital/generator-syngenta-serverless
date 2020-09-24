@@ -21,6 +21,7 @@ const mock_neo4j_host = '${self:custom.neo4j_config.${self:provider.stage}.host}
 const mock_neo4j_user = '${self:custom.neo4j_config.${self:provider.stage}.user}';
 const mock_neo4j_password = '${self:custom.neo4j_config.${self:provider.stage}.password}';
 const mock_neo4j_encrypted = false;
+const mock_mysql_db_uri = 'mysql://root:root_password@127.0.0.1:3306/local';
 
 exports.properties = {
     guid: mock_guid,
@@ -42,5 +43,6 @@ exports.properties = {
     neo4j_host: mock_neo4j_host,
     neo4j_user: mock_neo4j_user,
     neo4j_password: mock_neo4j_password,
-    neo4j_encrypted: mock_neo4j_encrypted
+    neo4j_encrypted: mock_neo4j_encrypted,
+    mysql_uri: mock_mysql_db_uri
 }

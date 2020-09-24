@@ -19,7 +19,7 @@ class Serverless {
             service: serverless.service || (doc ? doc.service : 'service'),
             package: serverless.package || (doc ? doc.package : default_package),
             custom: serverless.custom || (doc ? doc.custom : default_custom),
-            functions: serverless.functions || (doc ? doc.functions : []),
+            functions: serverless.functions || (doc ? (doc.functions || {}) : {}),
             provider: serverless.provider || (doc ? doc.provider : default_provider),
             plugins: serverless.custom || (doc ? doc.plugins : [])
         };
@@ -91,9 +91,13 @@ class Serverless {
         )
     }
 
+    async addResources(resources, args) {
+        return serverless_helper.addResources(resources, args);
+    }
+
     async addFunction(args) {
         const new_function = await serverless_helper.addFunction(args);
-        this._serverless.functions[args.hash_type] = new_function;
+        this._serverless.functions[new_function.name] = new_function.new_function;
         return true;
     }
 

@@ -59,6 +59,7 @@ const _addEnvironmentVariables = async () => {
 }
 
 const _createVersionerFunction = async () => {
+    // TODO need to add this function to the serverless file now...
     const directories = [
         'application',
         'application/v1',
@@ -86,7 +87,6 @@ const _addNeo4jDatabaseVersioner = async () => {
     ]
     await packagejson_helper.addPackage(packages);
     return _createVersionerFunction();
-
 }
 
 const _verifyPackageJsonExists = async (project_name = 'syngenta-generated-project-name') => {
