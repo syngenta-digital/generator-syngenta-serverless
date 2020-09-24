@@ -81,8 +81,11 @@ const _write_yaml = (target_path, json) => {
 }
 
 const _copy_directory = async (src, dest) => {
-    const does_exist = await _path_exists(dest);
-    if (!does_exist) await pfs.copy(src, dest);
+    try {
+        await pfs.copy(src, dest);
+    } catch(e) {
+        logger.warn(e);
+    }
     return true;
 }
 

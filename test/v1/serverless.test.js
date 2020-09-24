@@ -10,9 +10,15 @@ const packagejson = require('../../helpers/package-json');
 const logger = require('../../helpers/logger');
 const ServerlessLogic = require('../../logic/serverless');
 const { addPackage, addScript, create: create_package_json, read_me, delete_me } = require('../../helpers/package-json');
-const {default: neo4j_db_versioner_template} = require('../../templates/controller/console/neo4j_dbversioner');
-const {default: router_template} = require('../../templates/controller/apigateway/router');
-const {default: apigateway_template}  = require('../../templates/aws/resources/apigateway');
+const { default: neo4j_versioner_template } = require('../../templates/controller/console/neo4j_dbversioner');
+const { default: router_template } = require('../../templates/controller/apigateway/router');
+const { default: rds_mysql_template } = require('../../templates/aws/resources/mysql/rds-mysql');
+const { default: security_group_rules_template } = require('../../templates/aws/resources/mysql/security-group-rules');
+const { default: security_group_template } = require('../../templates/aws/resources/mysql/security-group');
+const { default: vpc_rds_template } = require('../../templates/aws/resources/mysql/vpc-rds');
+const { default: apigateway_template}  = require('../../templates/aws/resources/apigateway');
+const { default: mysql_versioner_template } = require('../../templates/controller/console/mysql_dbversioner');
+const { default: local_mysql_template } = require('../../templates/aws/local/mysql');
 const base_temp_path = `${path.join(__dirname, '../../')}temp`;
 
 describe('Test Serverless Generator', () => {
@@ -569,11 +575,11 @@ describe('Test Serverless Generator', () => {
                 });
                 it('db-versioner function created correctly', () => {
                     return new Promise(async (resolve) => {
-                        const _path = `${path.join(__dirname, '../../')}/application/v1/controller/console/database_versioner.js`;
+                        const _path = `${path.join(__dirname, '../../')}/application/v1/controller/console/database-versioner.js`;
                         const exists = await file.path_exists(_path);
                         assert(exists, true);
                         const db_versioner_code = await file.read_file(_path, true)
-                        assert(db_versioner_code.toString(), neo4j_db_versioner_template);
+                        assert(db_versioner_code.toString(), neo4j_versioner_template);
                         resolve();
                     });
                 });
@@ -590,18 +596,204 @@ describe('Test Serverless Generator', () => {
                 });
             });
             describe('#rds-mysql', () => {
+                const db_name = 'grower-tests';
                 before(async () => {
                     logger.log('inside mysql before')
-                    await rds_mysql.init({db_name: 'grower-tests'});
+                    await rds_mysql.init({db_name});
                     
                 });
                 describe('#rds_mysql', () => {
-                    it('was created properly', () => {
-                        return new Promise(async resolve => {
-                            resolve();
+                    describe('was created properly', () => {
+                        it('resources have been created correctly', () => {
+                            return new Promise(async resolve => {
+                                const _path = `${path.join(__dirname, '../../')}/aws/resources`;
+                                const aws_dir_exists = await file.path_exists(_path);
+                                assert.equal(aws_dir_exists, true);
+                                const resources = [
+                                    'rds-mysql',
+                                    'security-group-rules',
+                                    'security-group',
+                                    'vpc-rds'
+                                ];
+
+                                for (const resource of resources) {
+                                    // ensure all these resources exist in our resources dir;
+                                    const resource_exists = await file.path_exists(`${_path}/${resource}.yml`);
+                                    assert.equal(resource_exists, true);
+                                    const _resource = await file.read_yaml(`${_path}/${resource}.yml`);
+                                    switch(resource) {
+                                        case 'rds-mysql':
+                                            assert.equal(JSON.stringify(_resource), JSON.stringify(rds_mysql_template({db_name})));
+                                            break;
+                                        case 'security-group-rules':
+                                            assert.equal(JSON.stringify(_resource), JSON.stringify(security_group_rules_template()));
+                                            break;
+                                        case 'security-group':
+                                            assert.equal(JSON.stringify(_resource), JSON.stringify(security_group_template()));
+                                            break;
+                                        case 'vpc-rds':
+                                            assert.equal(JSON.stringify(_resource), JSON.stringify(vpc_rds_template()));
+                                            break;
+                                    }
+                                }
+
+                                resolve();
+                            })
                         })
+                        it('make sure helper files have been copied over correctly', () => {
+                            return new Promise(async resolve => {
+                                const _path = `${path.join(__dirname, '../../')}application/v1/controller/console/config`;
+                                const path_exists = await file.path_exists(_path);
+                                assert.equal(path_exists, true);
+                                const helpers = [
+                                    'dbConnector',
+                                    'ssm',
+                                    'helpers/mysql/connection',
+                                    'helpers/mysql/dbBuilder',
+                                    'helpers/mysql/index',
+                                    'helpers/mysql/ssmInterface',
+                                    'helpers/mysql/versionApplicator',
+                                    'helpers/mysql/versionChecker'
+                                ];
+
+                                for(const helper of helpers) {
+                                    const helper_path = `${_path}/${helper}.js`;
+                                    const helper_exists = await file.path_exists(helper_path);
+                                    assert.equal(helper_exists.toString(), 'true');
+                                }
+                                resolve();
+                            })
+                        });
+                        it('make sure all the resources have been added to serverless files', () => {
+                            return new Promise(async resolve => {
+                                // TODO: lets phase out our serverless logic class, it really makes no sense to have it.
+                                // we have a serverless helper file.
+                                // anywhere where we do this, we should just switch and read directly from serverless file.
+                                // const exported = _serverless.export();
+                                const expected = [
+                                    'apigateway',
+                                    'security-group',
+                                    'vpc-rds',
+                                    'rds-mysql'
+                                ]
+                                const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
+                                const { resources } = _serverless_yaml;
+                                
+                                for(const resource of resources) {
+                                    const found = expected.find(x => `\${file(aws/resources/${x}.yml}` === resource);
+                                    assert.notEqual(found, undefined);
+                                }
+                                resolve();
+                            });
+                        });
+                        it('make sure we got the db versioner function in the correct path', () => {
+                            return new Promise(async resolve => {
+                                const _path = `${path.join(__dirname, '../../')}application/v1/controller/console/database-versioner.js`;
+                                const exists = await file.path_exists(_path);
+                                assert.equal(exists, true);
+                                const versioner_code = await file.read_file(_path, true);
+                                const template = mysql_versioner_template();
+                                assert.equal(JSON.stringify(versioner_code.toString()), JSON.stringify(template));
+                                resolve();
+                            }); 
+                        });
+                        it('make sure we got db versioner in serverless', () => {
+                            return new Promise(async resolve => {
+                                const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
+                                const { functions } = _serverless_yaml;
+                                const find_versioner_function = functions['v1-database-versioner'];
+                                assert.equal(JSON.stringify(find_versioner_function), JSON.stringify({
+                                    name: '${self:provider.stackTags.name}-v1-database-versioner',
+                                    description: 'Applies versions to DB',
+                                    handler: 'application/v1/controller/console/database-versioner.apply',
+                                    memorySize: 512,
+                                    timeout: 900
+                                }));
+                                resolve();
+                            });
+                        });
+                        it('make sure we have our db versioner folder', () => {
+                            return new Promise(async resolve => {
+                                const _path = `${path.join(__dirname, '../../')}db_versions`;
+                                const exists = await file.path_exists(_path);
+                                assert.equal(exists, true);
+                                resolve();
+                            }); 
+                        });
+                        it('make sure the local mysql folder is copied over', () => {
+                            return new Promise(async resolve => {
+                                const _path = `${path.join(__dirname, '../../')}aws/local/mysql.yml`;
+                                const exists = await file.path_exists(_path);
+                                assert.equal(exists, true);
+                                const local_mysql_file = await file.read_yaml(_path);
+                                assert.equal(JSON.stringify(local_mysql_file), JSON.stringify(local_mysql_template(db_name)))
+                                resolve();
+                            });
+                        });
+                        it('make sure both env\'s are correct', () => {
+                            return new Promise(async resolve => {
+                                const local_env_path = `${path.join(__dirname, '../../')}aws/envs/local.yml`;
+                                const local_env_exists = await file.path_exists(local_env_path);
+                                assert.equal(local_env_exists, true);
+                                const local_env = await file.read_yaml(local_env_path);
+                                const template_local_env = {
+                                    DB_NAME: db_name,
+                                    DB_APP_USER: db_name,
+                                    DB_HOST: '127.0.0.1',
+                                    DB_MASTER_USER: 'root',
+                                    DB_MASTER_PASS: 'root_password',
+                                    DB_URI: `mysql://root:root_password@127.0.0.1:3306/${db_name}`
+                                }
+
+                                assert.equal(local_env.environment.DB_NAME, template_local_env.DB_NAME);
+                                assert.equal(local_env.environment.DB_APP_USER, template_local_env.DB_APP_USER);
+                                assert.equal(local_env.environment.DB_HOST, template_local_env.DB_HOST);
+                                assert.equal(local_env.environment.DB_MASTER_USER, template_local_env.DB_MASTER_USER);
+                                assert.equal(local_env.environment.DB_MASTER_PASS, template_local_env.DB_MASTER_PASS);
+                                assert.equal(local_env.environment.DB_URI, template_local_env.DB_URI);
+                            
+                                const cloud_env_path = `${path.join(__dirname, '../../')}aws/envs/cloud.yml`;
+                                const cloud_env_exists = await file.path_exists(cloud_env_path);
+                                assert.equal(cloud_env_exists, true);                            
+                                const cloud_env = await file.read_yaml(cloud_env_path);
+                                const template_cloud_env = {
+                                    DB_NAME: db_name,
+                                    DB_APP_USER: db_name,
+                                    DB_HOST: {
+                                        ['Fn::GetAtt']: [
+                                            `${db_name.replace(/-/g, '').trim()}DB`,
+                                            'Endpoint.Address'
+                                        ]
+                                    },
+                                    DB_MASTER_USER: 'root',
+                                    DB_MASTER_PASS: 'root_password',
+                                }
+
+                                assert.equal(cloud_env.environment.DB_NAME, template_cloud_env.DB_NAME);
+                                assert.equal(cloud_env.environment.DB_APP_USER, template_cloud_env.DB_APP_USER);
+                                assert.equal(JSON.stringify(cloud_env.environment.DB_HOST), JSON.stringify(template_cloud_env.DB_HOST));
+                                assert.equal(cloud_env.environment.DB_MASTER_USER, template_cloud_env.DB_MASTER_USER);
+                                assert.equal(cloud_env.environment.DB_MASTER_PASS, template_cloud_env.DB_MASTER_PASS);
+                                resolve();
+                            });
+                        });
+                        it('make sure the iamRoles are correct', () => {
+                            return new Promise(async resolve => {
+                                const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
+                                const { provider } = _serverless_yaml;
+                                const { iamRoleStatements } = provider;
+                                const find_versioner_function = iamRoleStatements.filter(x => x === '${file(aws/iamroles/ssm.yml)}').shift();
+                                assert.notEqual(find_versioner_function, undefined);
+                                resolve();
+                            });
+                        });
                     })
                 })
+            });
+            describe('#dynamodb', () => {
+                before(async () => {
+
+                });
             });
         });
     });

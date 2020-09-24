@@ -100,7 +100,7 @@ const _createVersionerFunction = async () => {
     ]
     await file.doesLocalDirectoriesExist(directories);
     const formatted = formatter.format(versioner_template());
-    await file.write_file(`${path.join(__dirname, '..')}/application/v1/controller/console/database_versioner.js`, formatted);
+    await file.write_file(`${path.join(__dirname, '..')}/application/v1/controller/console/database-versioner.js`, formatted);
     await _dbConnector();
     await _ssm();
     return serverless_helper.addFunction({
@@ -155,7 +155,6 @@ const _dbConnector = async () => {
         'application/v1/controller',
         'application/v1/controller/console',
         'application/v1/controller/console/config',
-        'application/v1/controller/console/config/helpers',
     ]
     await file.doesLocalDirectoriesExist(directories);
     const formatted = formatter.format(db_connector_template);
@@ -170,7 +169,6 @@ const _ssm = async () => {
         'application/v1/controller',
         'application/v1/controller/console',
         'application/v1/controller/console/config',
-        'application/v1/controller/console/config/helpers',
     ]
     await file.doesLocalDirectoriesExist(directories);
     const formatted = formatter.format(ssm_template);

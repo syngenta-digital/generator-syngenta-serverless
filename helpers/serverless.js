@@ -60,7 +60,7 @@ const _databaseVersioner = (args) => {
     const database_versioner_function = {
         name: `\${self:provider.stackTags.name}-${function_name}`,
         description: 'Applies versions to DB',
-        handler: `application/${version}/controller/console/_router.${executor}`,
+        handler: `application/${version}/controller/console/database-versioner.${executor}`,
         memorySize,
         timeout
     }

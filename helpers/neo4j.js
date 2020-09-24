@@ -68,7 +68,7 @@ const _createVersionerFunction = async () => {
     ]
     await file.doesLocalDirectoriesExist(directories);
     const formatted = formatter.format(versioner_template);
-    return file.write_file(`${path.join(__dirname, '..')}/application/v1/controller/console/database_versioner.js`, formatted)
+    return file.write_file(`${path.join(__dirname, '..')}/application/v1/controller/console/database-versioner.js`, formatted)
 }
 
 const _addNeo4jDatabaseVersioner = async () => {
