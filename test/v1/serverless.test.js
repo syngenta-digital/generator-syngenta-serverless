@@ -8,7 +8,7 @@ const neo4j = require('../../helpers/neo4j');
 const rds_mysql = require('../../helpers/rds-mysql');
 const packagejson = require('../../helpers/package-json');
 const logger = require('../../helpers/logger');
-const ServerlessLogic = require('../../logic/serverless');
+const serverless_helper = require('../../helpers/serverless');
 const { addPackage, addScript, create: create_package_json, read_me, delete_me } = require('../../helpers/package-json');
 const { default: neo4j_versioner_template } = require('../../templates/controller/console/neo4j_dbversioner');
 const { default: router_template } = require('../../templates/controller/apigateway/router');
@@ -22,14 +22,13 @@ const { default: local_mysql_template } = require('../../templates/aws/local/mys
 const base_temp_path = `${path.join(__dirname, '../../')}temp`;
 
 describe('Test Serverless Generator', () => {
-    let _serverless = new ServerlessLogic({});
     before(async () => {
         logger.log('====== START ======');
         // build package json
         // await delete_me();
         await create_package_json(`test-remove`);
         await file.create_directory(base_temp_path);
-        await _serverless.init(
+        await serverless_helper.init(
             mock.properties.app,
             mock.properties.service
         );
@@ -267,12 +266,18 @@ describe('Test Serverless Generator', () => {
         describe('#serverless', () => {
             describe('serverless was created properly', () => {
                 it('app name', () => {
-                    const exported = _serverless.export();
-                    assert.equal(exported.app, mock.properties.app);
+                    return new Promise(async resolve => {
+                        const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`)
+                        assert.equal(serverless_file.app, mock.properties.app);
+                        resolve();
+                    });
                 });
                 it('service name', () => {
-                    const exported = _serverless.export();
-                    assert.equal(exported.service, mock.properties.service);
+                    return new Promise(async resolve => {
+                        const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`)
+                        assert.equal(serverless_file.service, mock.properties.service);
+                        resolve();
+                    });
                 });
                 it('apigateway router function created correctly', () => {
                     return new Promise(async (resolve) => {
@@ -300,7 +305,7 @@ describe('Test Serverless Generator', () => {
         describe('#addFunction', () => {
             it('add apigateway function', () => {
                 return new Promise(async resolve => {
-                    await _serverless.addFunction({
+                    await serverless_helper.addFunction({
                         hash_type: 'apigateway-handler',
                         version: mock.properties.version,
                         type: mock.properties.apigateway_type,
@@ -315,20 +320,36 @@ describe('Test Serverless Generator', () => {
             });
             describe('apigateway was created properly', () => {
                 it('version', () => {
-                    const exported = _serverless.export();
-                    assert.equal(exported.functions['v1-apigateway-handler'].name, '${self:provider.stackTags.name}-v1-apigateway-handler');
+                    return new Promise(async resolve => {
+                        const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`)
+                        const { functions } = serverless_file;
+                        assert.equal(functions['v1-apigateway-handler'].name, '${self:provider.stackTags.name}-v1-apigateway-handler');
+                        resolve();
+                    });
                 });
                 it('handler', () => {
-                    const exported = _serverless.export();
-                    assert.equal(exported.functions['v1-apigateway-handler'].handler, 'application/v1/controller/apigateway/_router.route');
+                    return new Promise(async resolve => {
+                        const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`)
+                        const { functions } = serverless_file;
+                        assert.equal(functions['v1-apigateway-handler'].handler, 'application/v1/controller/apigateway/_router.route');
+                        resolve();
+                    });
                 });
                 it('memorySize', () => {
-                    const exported = _serverless.export();
-                    assert.equal(exported.functions['v1-apigateway-handler'].memorySize, mock.properties.apigateway_memorySize);
+                    return new Promise(async resolve => {
+                        const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`)
+                        const { functions } = serverless_file;
+                        assert.equal(functions['v1-apigateway-handler'].memorySize, mock.properties.apigateway_memorySize);
+                        resolve();
+                    });
                 });
                 it('timeout', () => {
-                    const exported = _serverless.export();
-                    assert.equal(exported.functions['v1-apigateway-handler'].timeout, mock.properties.apigateway_timeout);
+                    return new Promise(async resolve => {
+                        const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`)
+                        const { functions } = serverless_file;
+                        assert.equal(functions['v1-apigateway-handler'].timeout, mock.properties.apigateway_timeout);
+                        resolve();
+                    });
                 });
             })
     
@@ -340,17 +361,22 @@ describe('Test Serverless Generator', () => {
                     const _path = './aws/iamroles/dynamodb.yml';
                     it('add ddb iam role', () => {
                         return new Promise(async resolve => {
-                            await _serverless.addIamRole({
-                                path: _path,
-                                service: 'ddb'
-                            })
+                            await serverless_helper.addIamRole(
+                                _path,
+                                'ddb'
+                            )
                             resolve();
                         })
                     });
                     describe('iam role was created properly', () => {
                         it('path', () => {
-                            const exported = _serverless.export();
-                            assert.equal(exported.provider.iamRoleStatements[0], `\${file(${_path})}`);
+                            return new Promise(async resolve => {
+                                const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`)
+                                const { provider } = serverless_file;
+                                const { iamRoleStatements } = provider;
+                                assert.equal(iamRoleStatements[0], `\${file(${_path})}`);
+                                resolve();
+                            });
                         });
                         it('was created in iamroles directory', () => {
                             return new Promise(async resolve => {
@@ -373,18 +399,24 @@ describe('Test Serverless Generator', () => {
                     const bucket_name = 'test';
                     it('add s3 iam role', () => {
                         return new Promise(async resolve => {
-                            await _serverless.addIamRole({
-                                path: _path,
-                                bucket_name,
-                                service: 's3'
-                            })
+                            await serverless_helper.addIamRole(
+                                _path,
+                                's3',
+                                null,
+                                bucket_name
+                            )
                             resolve();
                         })
                     });
                     describe('iam role was created properly', () => {
                         it('path', () => {
-                            const exported = _serverless.export();
-                            assert.equal(exported.provider.iamRoleStatements[1], `\${file(${_path})}`);
+                            return new Promise(async resolve => {
+                                const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`)
+                                const { provider } = serverless_file;
+                                const { iamRoleStatements } = provider;
+                                assert.equal(iamRoleStatements[1], `\${file(${_path})}`);
+                                resolve();
+                            });
                         });
                         it('was created in iamroles directory', () => {
                             return new Promise(async resolve => {
@@ -415,18 +447,23 @@ describe('Test Serverless Generator', () => {
                     const api_name = 'test';
                     it('add ssm iam role', () => {
                         return new Promise(async resolve => {
-                            await _serverless.addIamRole({
-                                path: _path,
-                                api_name,
-                                service: 'ssm'
-                            })
+                            await serverless_helper.addIamRole(
+                                _path,
+                                'ssm',
+                                api_name
+                            )
                             resolve();
                         })
                     });
                     describe('iam role was created properly', () => {
                         it('path', () => {
-                            const exported = _serverless.export();
-                            assert.equal(exported.provider.iamRoleStatements[2], `\${file(${_path})}`);
+                            return new Promise(async resolve => {
+                                const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`);
+                                const { provider } = serverless_file;
+                                const { iamRoleStatements } = provider;
+                                assert.equal(iamRoleStatements[2], `\${file(${_path})}`);
+                                resolve();
+                            });
                         });
                         it('was created in iamroles directory', () => {
                             return new Promise(async resolve => {
@@ -456,17 +493,22 @@ describe('Test Serverless Generator', () => {
                     const _path = './aws/iamroles/sqs.yml';
                     it('add sqs iam role', () => {
                         return new Promise(async resolve => {
-                            await _serverless.addIamRole({
-                                path: _path,
-                                service: 'sqs'
-                            })
+                            await serverless_helper.addIamRole(
+                                _path,
+                                'sqs'
+                            )
                             resolve();
                         })
                     });
                     describe('iam role was created properly', () => {
                         it('path', () => {
-                            const exported = _serverless.export();
-                            assert.equal(exported.provider.iamRoleStatements[3], `\${file(${_path})}`);
+                            return new Promise(async resolve => {
+                                const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`);
+                                const { provider } = serverless_file;
+                                const { iamRoleStatements } = provider;
+                                assert.equal(iamRoleStatements[3], `\${file(${_path})}`);
+                                resolve();
+                            });
                         });
                         it('was created in iamroles directory', () => {
                             return new Promise(async resolve => {
@@ -488,17 +530,22 @@ describe('Test Serverless Generator', () => {
                     const _path = './aws/iamroles/sns.yml';
                     it('add sns iam role', () => {
                         return new Promise(async resolve => {
-                            await _serverless.addIamRole({
-                                path: _path,
-                                service: 'sns'
-                            })
+                            await serverless_helper.addIamRole(
+                                _path,
+                                'sns'
+                            )
                             resolve();
                         })
                     });
                     describe('iam role was created properly', () => {
                         it('path', () => {
-                            const exported = _serverless.export();
-                            assert.equal(exported.provider.iamRoleStatements[4], `\${file(${_path})}`);
+                            return new Promise(async resolve => {
+                                const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}/serverless.yml`);
+                                const { provider } = serverless_file;
+                                const { iamRoleStatements } = provider;
+                                assert.equal(iamRoleStatements[4], `\${file(${_path})}`);
+                                resolve();
+                            });
                         });
                         it('was created in iamroles directory', () => {
                             return new Promise(async resolve => {
@@ -520,10 +567,10 @@ describe('Test Serverless Generator', () => {
         });
     
         describe('#Resources', () => {
-            describe('ApiGateway', () => {
+            describe('#apiGateway', () => {
                 it('add apigateway resource', () => {
                     return new Promise(async resolve => {
-                        await _serverless.addResources(['apigateway'], {})
+                        await serverless_helper.addResources(['apigateway'], {});
                         resolve();
                     })
                 });
@@ -659,12 +706,8 @@ describe('Test Serverless Generator', () => {
                                 resolve();
                             })
                         });
-                        it('make sure all the resources have been added to serverless files', () => {
+                        it('make sure all the resources have been added to serverless file', () => {
                             return new Promise(async resolve => {
-                                // TODO: lets phase out our serverless logic class, it really makes no sense to have it.
-                                // we have a serverless helper file.
-                                // anywhere where we do this, we should just switch and read directly from serverless file.
-                                // const exported = _serverless.export();
                                 const expected = [
                                     'apigateway',
                                     'security-group',
@@ -788,6 +831,31 @@ describe('Test Serverless Generator', () => {
             describe('#dynamodb', () => {
                 before(async () => {
                     // delete mysql stuff?
+                });
+                it('make sure package json is correct', () => {
+                    return new Promise(async resolve => {
+
+                    });
+                });
+                it('make sure resources have been created correctly', () => {
+                    return new Promise(async resolve => {
+
+                    });
+                });
+                it('make sure all the resources have been added to serverless file', () => {
+                    return new Promise(async resolve => {
+
+                    });
+                });
+                it('make sure both env\'s are correct', () => {
+                    return new Promise(async resolve => {
+
+                    });
+                });
+                it('make sure the iamRoles are correct', () => {
+                    return new Promise(async resolve => {
+
+                    });
                 });
             });
         });

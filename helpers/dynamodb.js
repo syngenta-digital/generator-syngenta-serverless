@@ -8,7 +8,7 @@ const _addServerlessVariables = async () => {
 
 }
 
-const _addEnvironmentVariables = async () => {
+const _addEnvironmentVariables = async (db_name) => {
 
 }
 
@@ -25,5 +25,5 @@ const _verifyPackageJsonExists = async (project_name = 'syngenta-generated-proje
 }
 
 exports.init = async args => {
-    
+
 }
