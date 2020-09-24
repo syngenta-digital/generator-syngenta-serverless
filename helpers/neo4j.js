@@ -1,10 +1,10 @@
 const path = require('path');
 const file = require('./file');
 const mock = require('../test/mock/data');
+const formatter = require('esformatter');
 const serverless_helper = require('../helpers/serverless');
 const packagejson_helper = require('../helpers/package-json');
 const neo4j_local_template = require('../templates/aws/local/neo4j');
-const formatter = require('esformatter');
 const { default: local_env_template } = require('../templates/aws/envs/local');
 const { default: versioner_template } = require('../templates/controller/console/neo4j_dbversioner');
 const { default: neo4j } = require('../templates/aws/local/neo4j');
@@ -99,10 +99,10 @@ const _addStarterScriptsToPackageJson = async () => {
             name: 'start',
             value: "concurrently \"docker-compose -f aws/local/neo4j.yml up -d\" \"serverless offline start --stage local --aws_envs local --profile local --region us-east-2\""
         },
-        {
-            name: 'version',
-            value: "serverless invoke local --function v1-console-database-versioner --stage local --aws_envs local --region us-east-2"
-        }
+        // {
+        //     name: 'version',
+        //     value: "serverless invoke local --function v1-console-database-versioner --stage local --aws_envs local --region us-east-2"
+        // }
     ]
 
     return addScript(scripts);
@@ -111,7 +111,7 @@ const _addStarterScriptsToPackageJson = async () => {
 exports.init = async () => {
     await _verifyPackageJsonExists();
     await _addStarterScriptsToPackageJson();
-    await _addNeo4jDatabaseVersioner();
+    // await _addNeo4jDatabaseVersioner();
     await _addLocalNeo4j();
     await _addEnvironmentVariables();
     await _addServerlessVariables();

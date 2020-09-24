@@ -147,8 +147,8 @@ const _sqsIamRoleHandler = async () => {
     return file.write_yaml(`${IAM_ROLES_LOCATION}/sqs.yml`, sqsTemplate());
 }
 
-const _ssmIamRoleHandler = async () => {
-    return file.write_yaml(`${IAM_ROLES_LOCATION}/ssm.yml`, ssmTemplate());
+const _ssmIamRoleHandler = async (api_name) => {
+    return file.write_yaml(`${IAM_ROLES_LOCATION}/ssm.yml`, ssmTemplate(api_name));
 }
 
 const _addFunction = async (args) => {
@@ -271,7 +271,7 @@ const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucke
                     await _sqsIamRoleHandler();
                     break;
                 case 'ssm':
-                    await _ssmIamRoleHandler();
+                    await _ssmIamRoleHandler(api_name);
                     break;
             }
         }

@@ -180,9 +180,9 @@ const _iamRoles = async () => {
     return serverless_helper.addIamRole('aws/iamroles/ssm.yml', 'ssm');
 }
 
-exports.init = async (args) => {
+exports.init = async args => {
     await _verifyPackageJsonExists();
-    await _addMysqlDatabaseVersioner();
+    // await _addMysqlDatabaseVersioner();
     await _addMysqlResources(args);
     await _environmentVariables(args.db_name);
     await _addServerlessVariables();
