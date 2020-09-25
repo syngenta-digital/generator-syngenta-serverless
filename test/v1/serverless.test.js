@@ -5,6 +5,7 @@ const mock = require('../mock/data');
 const file = require('../../helpers/file');
 const config = require('../../helpers/config');
 const neo4j = require('../../helpers/neo4j');
+const dynamodb = require('../../helpers/dynamodb');
 const rds_mysql = require('../../helpers/rds-mysql');
 const packagejson = require('../../helpers/package-json');
 const logger = require('../../helpers/logger');
@@ -25,7 +26,7 @@ describe('Test Serverless Generator', () => {
     before(async () => {
         logger.log('====== START ======');
         // build package json
-        // await delete_me();
+        await delete_me();
         await create_package_json(`test-remove`);
         await file.create_directory(base_temp_path);
         await serverless_helper.init(
@@ -42,7 +43,7 @@ describe('Test Serverless Generator', () => {
             await file.delete_file(`${path.join(__dirname, '../../')}/package2.json`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}application`);
-            await file.force_delete_directory(`${path.join(__dirname, '../../')}db_versions`);
+            // await file.force_delete_directory(`${path.join(__dirname, '../../')}db_versions`);
         }
         logger.log('====== COMPLETE =====')
     })
@@ -110,18 +111,17 @@ describe('Test Serverless Generator', () => {
           describe('#addScripts', () => {
             it('add Scripts Array', () => {
               return new Promise(async resolve => {
-      
-                  const scripts = [
-                      {
-                          name: 'start',
-                          value: 'concurrently "docker-compose -f aws/local/neo4j.yml up -d" "serverless offline start --stage local --aws_envs local --profile local --region us-east-2"'
-                      }
-                  ]
+                const scripts = [
+                    {
+                        name: 'start',
+                        value: 'concurrently "docker-compose -f aws/local/neo4j.yml up -d" "serverless offline start --stage local --aws_envs local --profile local --region us-east-2"'
+                    }
+                ]
               
-                  await addScript(scripts);
-                  const packagejson = await read_me();
-                  assert.equal(Object.keys(packagejson.scripts).length, 5);
-                  resolve();
+                await addScript(scripts);
+                const packagejson = await read_me();
+                assert.notEqual(packagejson.scripts.start, undefined);
+                resolve();
               });
             });
             it('add Scripts single', () => {
@@ -135,7 +135,7 @@ describe('Test Serverless Generator', () => {
               
                   await addScript(script);
                   const packagejson = await read_me();
-                  assert.equal(Object.keys(packagejson.scripts).length, 6);
+                  assert.notEqual(packagejson.scripts.test2, undefined);
                   resolve();
               });
             });
@@ -200,7 +200,7 @@ describe('Test Serverless Generator', () => {
                         
                             await addScript(scripts);
                             const packagejson = await read_me();
-                            assert.equal(Object.keys(packagejson.scripts).length, 6);
+                            assert.notEqual(packagejson.scripts.start, undefined);
                             resolve();
                         });
                     });
@@ -214,7 +214,7 @@ describe('Test Serverless Generator', () => {
                         
                             await addScript(script);
                             const packagejson = await read_me();
-                            assert.equal(Object.keys(packagejson.scripts).length, 6);
+                            assert.notEqual(packagejson.scripts.test2, undefined);
                             resolve();
                         });
                     });
@@ -261,8 +261,7 @@ describe('Test Serverless Generator', () => {
                     });
                 });
             });
-        });
-            
+        });    
         describe('#serverless', () => {
             describe('serverless was created properly', () => {
                 it('app name', () => {
@@ -301,7 +300,6 @@ describe('Test Serverless Generator', () => {
             })
     
         });
-    
         describe('#addFunction', () => {
             it('add apigateway function', () => {
                 return new Promise(async resolve => {
@@ -354,16 +352,15 @@ describe('Test Serverless Generator', () => {
             })
     
         });
-    
         describe('#addIamRole', () => {
             describe('iamroles', () => {
                 describe('DynamoDB', () => {
                     const _path = './aws/iamroles/dynamodb.yml';
-                    it('add ddb iam role', () => {
+                    it('add dynamodb iam role', () => {
                         return new Promise(async resolve => {
                             await serverless_helper.addIamRole(
                                 _path,
-                                'ddb'
+                                'dynamodb'
                             )
                             resolve();
                         })
@@ -565,7 +562,6 @@ describe('Test Serverless Generator', () => {
                 });
             });
         });
-    
         describe('#Resources', () => {
             describe('#apiGateway', () => {
                 it('add apigateway resource', () => {
@@ -586,7 +582,6 @@ describe('Test Serverless Generator', () => {
             });
             describe('#neo4j', () => {
                 before(async () => {
-                    logger.log('inside neo4j before')
                     await neo4j.init();
                 });
                 it('package json is correct', () => {
@@ -639,7 +634,6 @@ describe('Test Serverless Generator', () => {
             describe('#rds-mysql', () => {
                 const db_name = 'grower-tests';
                 before(async () => {
-                    logger.log('inside mysql before');
                     // delete neo4j stuff
                     await rds_mysql.init({db_name});
                     
@@ -822,6 +816,7 @@ describe('Test Serverless Generator', () => {
                                 const { iamRoleStatements } = provider;
                                 const find_versioner_function = iamRoleStatements.filter(x => x === '${file(aws/iamroles/ssm.yml)}').shift();
                                 assert.notEqual(find_versioner_function, undefined);
+                                // make sure the file actually exists, and is correct?
                                 resolve();
                             });
                         });
@@ -829,32 +824,87 @@ describe('Test Serverless Generator', () => {
                 })
             });
             describe('#dynamodb', () => {
+                const db_name = 'serverless-test';
                 before(async () => {
                     // delete mysql stuff?
+                    await dynamodb.init({
+                        db_name
+                    });
                 });
                 it('make sure package json is correct', () => {
                     return new Promise(async resolve => {
-
+                        const _packagejson = await packagejson.read_me();
+                        assert.notEqual(_packagejson.devDependencies['serverless-dynamodb-local'], undefined);
+                        assert.notEqual(_packagejson.devDependencies['serverless-offline'], undefined);
+                        resolve();
                     });
                 });
                 it('make sure resources have been created correctly', () => {
                     return new Promise(async resolve => {
-
+                        const _path = `${path.join(__dirname, '../../')}aws/resources/dynamodb.yml`;
+                        const resource_exists = await file.path_exists(_path);
+                        assert.equal(resource_exists, true);
+                        const read_file = await file.read_yaml(_path);
+                        const { Resources } = read_file;
+                        assert.notEqual(Resources[db_name], undefined);
+                        resolve();
                     });
                 });
                 it('make sure all the resources have been added to serverless file', () => {
                     return new Promise(async resolve => {
-
+                        const serverless_file = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`);
+                        const { custom, provider, plugins } = serverless_file;
+                        assert.equal(JSON.stringify(custom.ddb_recovery), JSON.stringify({
+                            local: false,
+                            dev: false,
+                            qa: false,
+                            uat: true,
+                            prod: true
+                        }));
+                        assert.equal(JSON.stringify(custom.dynamodb), JSON.stringify({
+                            stages: [
+                                'local'
+                            ],
+                            start: {
+                                port: 4000,
+                                inMemory: true,
+                                migrate: true,
+                                seed: true
+                            }
+                        }));
+                        resolve();
                     });
                 });
                 it('make sure both env\'s are correct', () => {
                     return new Promise(async resolve => {
+                        const local_env_path = `${path.join(__dirname, '../../')}aws/envs/local.yml`;
+                        const local_env_exists = await file.path_exists(local_env_path);
+                        const local_env = await file.read_yaml(local_env_path);
+                        const template_local_env = {};
+                        template_local_env[`DYNAMO_${db_name.replace(/-/g, '_').toUpperCase()}`] = `\${self:provider.stackTags.name}-${db_name}`;                   
+                        
+                        const cloud_env_path = `${path.join(__dirname, '../../')}aws/envs/cloud.yml`;
+                        const cloud_env_exists = await file.path_exists(cloud_env_path);                        
+                        const cloud_env = await file.read_yaml(cloud_env_path);
+                        const template_cloud_env = {};
+                        template_cloud_env[`DYNAMO_${db_name.replace(/-/g, '_').toUpperCase()}`] = `\${self:provider.stackTags.name}-${db_name}`;
 
+                        assert.equal(local_env_exists, true);
+                        assert.equal(local_env.environment[`DYNAMO_${db_name.replace(/-/g, '_').toUpperCase()}`], template_local_env[`DYNAMO_${db_name.replace(/-/g, '_').toUpperCase()}`]);
+                        assert.equal(cloud_env_exists, true);    
+                        assert.equal(cloud_env.environment[`DYNAMO_${db_name.replace(/-/g, '_').toUpperCase()}`], template_cloud_env[`DYNAMO_${db_name.replace(/-/g, '_').toUpperCase()}`]);
+                        resolve();
                     });
                 });
                 it('make sure the iamRoles are correct', () => {
                     return new Promise(async resolve => {
-
+                        const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
+                        const { provider } = _serverless_yaml;
+                        const { iamRoleStatements } = provider;
+                        const find_versioner_function = iamRoleStatements.filter(x => x === '${file(aws/iamroles/dynamodb.yml)}').shift();
+                        assert.notEqual(find_versioner_function, undefined);
+                        // make sure the file actually exists, and is correct?
+                        resolve();
                     });
                 });
             });

@@ -7,6 +7,8 @@ const formatter = require('esformatter');
 const packagejson_helper  = require('../helpers/package-json');
 const {default: router_template}  = require('../templates/controller/apigateway/router');
 const {default: apigateway_template}  = require('../templates/aws/resources/apigateway');
+const {default: dynamodb_table_template}  = require('../templates/aws/resources/dynamodb/table');
+const {default: dynamodb_database_template}  = require('../templates/aws/resources/dynamodb/database');
 const {default: rds_mysql_template}  = require('../templates/aws/resources/mysql/rds-mysql');
 const {default: security_group_template}  = require('../templates/aws/resources/mysql/security-group');
 const {default: security_group_rules_template}  = require('../templates/aws/resources/mysql/security-group-rules');
@@ -154,7 +156,7 @@ const _ssmIamRoleHandler = async (api_name) => {
 const _addFunction = async (args) => {
     // TODO: this path stuff is way too confusing need to somehow reference parent dir.
     const { hash_type } = args;
-    const doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/serverless.yml`, 'utf8'));
+    const doc = await file.read_yaml(`${path.join(__dirname, '..')}/serverless.yml`);
     const new_function = functionHashMapper.get(hash_type)(args);
     if(!doc.functions) {
         doc.functions = {};
@@ -164,12 +166,27 @@ const _addFunction = async (args) => {
     return new_function;
 }
 
+const dynamodb_handler = async (args) => {
+    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/dynamodb.yml`;
+    const does_resource_exist = await file.path_exists(_resource_path);
+    let read_resource = null;
+    if(!does_resource_exist) {
+        read_resource = dynamodb_database_template();
+    } else {
+        read_resource = await file.read_yaml(_resource_path);
+    }
+    read_resource.Resources[args.db_name] = dynamodb_table_template(args.db_name);
+    return read_resource;
+}
+
 const _createResource = async (args) => {
     let fn = null;
-
     switch(args.resource) {
         case 'apigateway':
             fn = apigateway_template;
+            break;
+        case 'dynamodb':
+            fn = dynamodb_handler;
             break;
         case 'rds-mysql':
             fn = rds_mysql_template;
@@ -189,7 +206,7 @@ const _createResource = async (args) => {
 
     if(!fn) return null;
 
-    return file.write_yaml(`${RESOURCES_LOCATION}/${args.resource}.yml`, fn(args));
+    return file.write_yaml(`${RESOURCES_LOCATION}/${args.resource}.yml`, await fn(args));
 }
 
 const _addResource = async (resource, domain_name, db_name) => {
@@ -210,7 +227,7 @@ const _addResource = async (resource, domain_name, db_name) => {
 }
 
 const available_services = [
-    'ddb',
+    'dynamodb',
     's3',
     'sns',
     'sqs',
@@ -243,6 +260,19 @@ const _iamRoleDirectoriesExist = async () => {
     return true;
 }
 
+const _addPlugin = async (plugin) => {
+    // TODO: this path stuff is way too confusing need to somehow reference parent dir.
+    const _path = `${path.join(__dirname, '..')}/serverless.yml`;
+    let doc = yaml.safeLoad(fs.readFileSync(_path, 'utf8'));
+    const { plugins } = doc;
+    if (!plugins) {
+        doc.plugins = [];
+    }
+
+    doc.plugins.push(plugin);
+    return file.write_yaml(_path, doc);
+}
+
 const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucket_name) => {
     // TODO: this path stuff is way too confusing need to somehow reference parent dir.
     await _iamRoleDirectoriesExist();
@@ -258,7 +288,7 @@ const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucke
         await file.write_yaml(SERVERLESS_LOCATION, doc);
         if (add_to_aws_directory) {
             switch (service) {
-                case 'ddb':
+                case 'dynamodb':
                     await _ddbIamRoleHandler();
                     break;
                 case 's3':
@@ -334,6 +364,23 @@ exports.addResources = async (resources, args) => {
 
     for(const resource of _resources) {
         await _addResource(resource, args.domain_name, args.db_name);
+    }
+
+    return true;
+}
+/**
+ * 
+ * @param {plugin} plugin plugin is just a string of the plugin you wish to add, or an array of plugin strings.
+ */
+exports.addPlugin = async (plugins) => {
+    let _plugins = [];
+
+    if (plugins.constructor === Array) {
+        _plugins = plugins;
+    } else _plugins.push(plugins);
+
+    for(const plugin of _plugins) {
+        await _addPlugin(plugin);
     }
 
     return true;

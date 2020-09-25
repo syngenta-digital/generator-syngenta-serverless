@@ -12,7 +12,8 @@ const template = (args) => {
                PubliclyAccessible: true,
                StorageType: "gp2",
                DBInstanceClass: "${self:custom.db_instance_size.${self:provider.stage}}",
-               DBInstanceIdentifier: db_name,
+               DBInstanceIdentifier: "${self:provider.stackTags.name}",
+               DBName: db_name,
                StorageEncrypted: true,
                VPCSecurityGroups: [
                   {
