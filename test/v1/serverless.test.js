@@ -7,6 +7,7 @@ const config = require('../../helpers/config');
 const neo4j = require('../../helpers/neo4j');
 const dynamodb = require('../../helpers/dynamodb');
 const rds_mysql = require('../../helpers/rds-mysql');
+const rds_postgres = require('../../helpers/rds-postgres');
 const packagejson = require('../../helpers/package-json');
 const logger = require('../../helpers/logger');
 const serverless_helper = require('../../helpers/serverless');
@@ -43,7 +44,7 @@ describe('Test Serverless Generator', () => {
             await file.delete_file(`${path.join(__dirname, '../../')}/package2.json`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}application`);
-            // await file.force_delete_directory(`${path.join(__dirname, '../../')}db_versions`);
+            await file.force_delete_directory(`${path.join(__dirname, '../../')}db_versions`);
         }
         logger.log('====== COMPLETE =====')
     })
@@ -823,6 +824,32 @@ describe('Test Serverless Generator', () => {
                     })
                 })
             });
+            describe('#rds-postgres', () => {
+                const db_name = 'grower-tests';
+                before(async () => {
+                    // delete neo4j stuff
+                    await rds_postgres.init({db_name});
+                    
+                });
+                describe('was created properly', () => {
+                    it('make sure postgres local exists', () => {
+                        return new Promise(async resolve => {
+                            const _path = `${path.join(__dirname, '../../')}aws/local/postgres.yml`;
+                            const path_exists = await file.path_exists(_path);
+                            assert.equal(path_exists, true);
+                            resolve();
+                        });
+                    });
+                    it('make sure postgres resource exists', () => {
+                        return new Promise(async resolve => {
+                            const _path = `${path.join(__dirname, '../../')}aws/resources/rds-postgres.yml`;
+                            const path_exists = await file.path_exists(_path);
+                            assert.equal(path_exists, true);
+                            resolve();
+                        });
+                    });
+                });
+            })
             describe('#dynamodb', () => {
                 const db_name = 'serverless-test';
                 before(async () => {

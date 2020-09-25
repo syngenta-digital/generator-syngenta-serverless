@@ -9,6 +9,7 @@ const {default: router_template}  = require('../templates/controller/apigateway/
 const {default: apigateway_template}  = require('../templates/aws/resources/apigateway');
 const {default: dynamodb_table_template}  = require('../templates/aws/resources/dynamodb/table');
 const {default: dynamodb_database_template}  = require('../templates/aws/resources/dynamodb/database');
+const {default: rds_postgres_template}  = require('../templates/aws/resources/postgres/rds-postgres');
 const {default: rds_mysql_template}  = require('../templates/aws/resources/mysql/rds-mysql');
 const {default: security_group_template}  = require('../templates/aws/resources/mysql/security-group');
 const {default: security_group_rules_template}  = require('../templates/aws/resources/mysql/security-group-rules');
@@ -190,6 +191,9 @@ const _createResource = async (args) => {
             break;
         case 'rds-mysql':
             fn = rds_mysql_template;
+            break;
+        case 'rds-postgres':
+            fn = rds_postgres_template;
             break;
         case 'security-group-rules':
             fn = security_group_rules_template;
