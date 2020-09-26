@@ -51,7 +51,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
         if(config.DEBUG) {
             await file.delete_file(`${file.root()}serverless.yml`);
             await file.delete_file(`${file.root()}package2.json`);
-            // await file.force_delete_directory(`${file.root()}aws`);
+            await file.force_delete_directory(`${file.root()}aws`);
             await file.force_delete_directory(`${file.root()}application`);
             await file.force_delete_directory(`${file.root()}db_versions`);
         }
