@@ -51,7 +51,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
         if(config.DEBUG) {
             await file.delete_file(`${path.join(__dirname, '../../')}/serverless.yml`);
             await file.delete_file(`${path.join(__dirname, '../../')}/package2.json`);
-            // await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
+            await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}application`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}db_versions`);
         }
