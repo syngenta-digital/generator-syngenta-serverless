@@ -1,47 +1,25 @@
 const template = () => {
    return {
       groups: {
-         local: {
-            rds: {
-               inbound: [
-                  {
-                     IpProtocol: -1,
-                     CidrIp: "0.0.0.0/0",
-                     FromPort: -1,
-                     ToPort: -1
-                  }
-               ]
-            },
-            lambda: {
-               inbound: [
-                  {
-                     IpProtocol: -1,
-                     CidrIp: "0.0.0.0/0",
-                     FromPort: -1,
-                     ToPort: -1
-                  }
-               ],
-               outbound: [
-                  {
-                     IpProtocol: -1,
-                     CidrIp: "0.0.0.0/0",
-                     FromPort: -1,
-                     ToPort: -1
-                  }
-               ]
-            }
-         },
          dev: {
-            rds: {
-               inbound: [
-                  {
-                     IpProtocol: "tcp",
-                     CidrIp: "0.0.0.0/0",
-                     FromPort: 3306,
-                     ToPort: 3306
-                  }
-               ]
-            },
+            // rds: {
+            //    inbound: [
+            //       {
+            //          SourceSecurityGroupId: {
+            //             Ref: "LambdaSecurityGroup"
+            //          },
+            //          IpProtocol: "tcp",
+            //          FromPort: 3306,
+            //          ToPort: 3306
+            //       },
+            //       {
+            //          IpProtocol: "tcp",
+            //          CidrIp: "0.0.0.0/0",
+            //          FromPort: 3306,
+            //          ToPort: 3306
+            //       }
+            //    ]
+            // },
             lambda: {
                inbound: [
                   {
@@ -62,16 +40,25 @@ const template = () => {
             }
          },
          qa: {
-            rds: {
-               inbound: [
-                  {
-                     IpProtocol: "tcp",
-                     CidrIp: "0.0.0.0/0",
-                     FromPort: 3306,
-                     ToPort: 3306
-                  }
-               ]
-            },
+            // rds: {
+            //    inbound: [
+            //       {
+            //          SourceSecurityGroupId: {
+            //             Ref: "LambdaSecurityGroup"
+            //          },
+            //          Description: "Lambda access to DB",
+            //          IpProtocol: "tcp",
+            //          FromPort: 3306,
+            //          ToPort: 3306
+            //       },
+            //       {
+            //          IpProtocol: "tcp",
+            //          CidrIp: "0.0.0.0/0",
+            //          FromPort: 3306,
+            //          ToPort: 3306
+            //       }
+            //    ]
+            // },
             lambda: {
                inbound: [
                   {
@@ -92,16 +79,25 @@ const template = () => {
             }
          },
          uat: {
-            rds: {
-               inbound: [
-                  {
-                     IpProtocol: "tcp",
-                     CidrIp: "0.0.0.0/0",
-                     FromPort: 3306,
-                     ToPort: 3306
-                  }
-               ]
-            },
+            // rds: {
+            //    inbound: [
+            //       {
+            //          SourceSecurityGroupId: {
+            //             Ref: "LambdaSecurityGroup"
+            //          },
+            //          Description: "Lambda access to DB",
+            //          IpProtocol: "tcp",
+            //          FromPort: 3306,
+            //          ToPort: 3306
+            //       },
+            //       {
+            //          IpProtocol: "tcp",
+            //          CidrIp: "0.0.0.0/0",
+            //          FromPort: 3306,
+            //          ToPort: 3306
+            //       }
+            //    ]
+            // },
             lambda: {
                inbound: [
                   {
@@ -122,16 +118,25 @@ const template = () => {
             }
          },
          prod: {
-            rds: {
-               inbound: [
-                  {
-                     IpProtocol: "tcp",
-                     CidrIp: "0.0.0.0/0",
-                     FromPort: 3306,
-                     ToPort: 3306
-                  }
-               ]
-            },
+            // rds: {
+            //    inbound: [
+            //       {
+            //          SourceSecurityGroupId: {
+            //             Ref: "LambdaSecurityGroup"
+            //          },
+            //          Description: "Lambda access to DB",
+            //          IpProtocol: "tcp",
+            //          FromPort: 3306,
+            //          ToPort: 3306
+            //       },
+            //       {
+            //          IpProtocol: "tcp",
+            //          CidrIp: "0.0.0.0/0",
+            //          FromPort: 3306,
+            //          ToPort: 3306
+            //       }
+            //    ]
+            // },
             lambda: {
                inbound: [
                   {

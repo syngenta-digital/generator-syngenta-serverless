@@ -11,9 +11,10 @@ const {default: dynamodb_table_template}  = require('../templates/aws/resources/
 const {default: dynamodb_database_template}  = require('../templates/aws/resources/dynamodb/database');
 const {default: rds_postgres_template}  = require('../templates/aws/resources/postgres/rds-postgres');
 const {default: rds_mysql_template}  = require('../templates/aws/resources/mysql/rds-mysql');
+const {default: rds_dbinstance_template}  = require('../templates/aws/resources/rds-dbinstance');
 const {default: security_group_template}  = require('../templates/aws/resources/mysql/security-group');
 const {default: security_group_rules_template}  = require('../templates/aws/resources/mysql/security-group-rules');
-const {default: vpc_rds_template}  = require('../templates/aws/resources/mysql/vpc-rds');
+const {default: vpc_rds_template}  = require('../templates/aws/resources/vpc');
 
 const { ddbTemplate, s3Template, snsTemplate, sqsTemplate, ssmTemplate } = require('../templates/aws/iamRoles');
 const SERVERLESS_LOCATION = `${path.join(__dirname, '../serverless.yml')}`;
@@ -180,6 +181,110 @@ const dynamodb_handler = async (args) => {
     return read_resource;
 }
 
+const _addVpcPort = async (args, engine) => {
+    let port = null;
+
+    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/security-group-rules.yml`;
+    const does_resource_exist = await file.path_exists(_resource_path);
+
+    if(!does_resource_exist) {
+        await file.write_yaml(_resource_path, await security_group_rules_template(args));
+    }
+
+    const read_resource = await file.read_yaml(_resource_path);
+
+    switch(engine) {
+        case 'mysql':
+            port = 3306;
+            break;
+        case 'postgres':
+            port = 5432;
+            break;
+        default:
+            throw new Error('Unsupported DB engine.');
+    }
+
+    const envs = [
+        'dev',
+        'qa',
+        'prod'
+    ]
+
+    for(const env of envs) {
+        const new_port = [
+            {
+                SourceSecurityGroupId: {
+                Ref: "LambdaSecurityGroup"
+                },
+                IpProtocol: "tcp",
+                FromPort: port,
+                ToPort: port
+            },
+            {
+                IpProtocol: "tcp",
+                CidrIp: "0.0.0.0/0",
+                FromPort: port,
+                ToPort: port
+            }
+        ]
+        if(!read_resource.groups[env].rds) {
+            read_resource.groups[env].rds = {};
+            read_resource.groups[env].rds.inbound = new_port;
+        } else {
+            const does_this_port_exist = read_resource.groups[env].rds.inbound.filter(x => x.FromPort === port).shift();
+            if(!does_this_port_exist) {
+                read_resource.groups[env].rds.inbound.push(new_port[0]);
+                read_resource.groups[env].rds.inbound.push(new_port[1]);
+            }
+        }
+    }
+
+    return file.write_yaml(_resource_path, read_resource);
+}
+
+const rds_mysql_handler = async (args) => {
+    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/rds-mysql.yml`;
+    const does_resource_exist = await file.path_exists(_resource_path);
+    let read_resource = null;
+    if(!does_resource_exist) {
+        read_resource = rds_mysql_template(args);
+    } else {
+        read_resource = await file.read_yaml(_resource_path);
+    }
+    read_resource.Resources[args.db_name] = rds_dbinstance_template(args);
+    // add correct vpc port
+    await _addVpcPort(args, 'mysql');
+    return read_resource;
+}
+
+const rds_postgres_handler = async (args) => {
+    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/rds-postgres.yml`;
+    const does_resource_exist = await file.path_exists(_resource_path);
+    let read_resource = null;
+    if(!does_resource_exist) {
+        read_resource = rds_postgres_template(args);
+    } else {
+        read_resource = await file.read_yaml(_resource_path);
+    }
+    read_resource.Resources[args.db_name] = rds_dbinstance_template(args);
+    // add correct vpc port 
+    await _addVpcPort(args, 'postgres');
+    return read_resource;
+}
+
+const security_group_rules_handler = async () => {
+    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/security-group-rules.yml`;
+    const does_resource_exist = await file.path_exists(_resource_path);
+    let read_resource = null;
+    if(!does_resource_exist) {
+        read_resource = security_group_rules_template();
+    } else {
+        read_resource = await file.read_yaml(_resource_path);
+    }
+
+    return read_resource;
+}
+
 const _createResource = async (args) => {
     let fn = null;
     switch(args.resource) {
@@ -190,13 +295,13 @@ const _createResource = async (args) => {
             fn = dynamodb_handler;
             break;
         case 'rds-mysql':
-            fn = rds_mysql_template;
+            fn = rds_mysql_handler;
             break;
         case 'rds-postgres':
-            fn = rds_postgres_template;
+            fn = rds_postgres_handler;
             break;
         case 'security-group-rules':
-            fn = security_group_rules_template;
+            fn = security_group_rules_handler;
             break;
         case 'security-group':
             fn = security_group_template;
@@ -213,7 +318,7 @@ const _createResource = async (args) => {
     return file.write_yaml(`${RESOURCES_LOCATION}/${args.resource}.yml`, await fn(args));
 }
 
-const _addResource = async (resource, domain_name, db_name) => {
+const _addResource = async (resource, args) => {
     await _resourcesDirectoriesExist();
     // TODO: this path stuff is way too confusing need to somehow reference parent dir.
     const doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/serverless.yml`, 'utf8'));
@@ -226,7 +331,7 @@ const _addResource = async (resource, domain_name, db_name) => {
     ]
     
     if(!black_list_resources_from_serverless_file.includes(resource)) doc.resources.push(`\${file(aws/resources/${resource}.yml}`);
-    await _createResource({ resource, domain_name, db_name });
+    await _createResource({ resource, ...args });
     return file.write_yaml(SERVERLESS_LOCATION, doc);
 }
 
@@ -367,7 +472,7 @@ exports.addResources = async (resources, args) => {
     } else _resources = resources;
 
     for(const resource of _resources) {
-        await _addResource(resource, args.domain_name, args.db_name);
+        await _addResource(resource, args);
     }
 
     return true;

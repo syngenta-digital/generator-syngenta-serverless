@@ -4,6 +4,7 @@ require('chai').should();
 const mock = require('../mock/data');
 const file = require('../../helpers/file');
 const config = require('../../helpers/config');
+const elasticsearch = require('../../helpers/elasticsearch');
 const neo4j = require('../../helpers/neo4j');
 const dynamodb = require('../../helpers/dynamodb');
 const rds_mysql = require('../../helpers/rds-mysql');
@@ -14,16 +15,21 @@ const serverless_helper = require('../../helpers/serverless');
 const { addPackage, addScript, create: create_package_json, read_me, delete_me } = require('../../helpers/package-json');
 const { default: neo4j_versioner_template } = require('../../templates/controller/console/neo4j_dbversioner');
 const { default: router_template } = require('../../templates/controller/apigateway/router');
+const { default: rds_postgres_template } = require('../../templates/aws/resources/postgres/rds-postgres');
 const { default: rds_mysql_template } = require('../../templates/aws/resources/mysql/rds-mysql');
+const { default: rds_dbinstance_template } = require('../../templates/aws/resources/rds-dbinstance');
 const { default: security_group_rules_template } = require('../../templates/aws/resources/mysql/security-group-rules');
 const { default: security_group_template } = require('../../templates/aws/resources/mysql/security-group');
-const { default: vpc_rds_template } = require('../../templates/aws/resources/mysql/vpc-rds');
+const { default: vpc_rds_template } = require('../../templates/aws/resources/vpc');
 const { default: apigateway_template}  = require('../../templates/aws/resources/apigateway');
 const { default: mysql_versioner_template } = require('../../templates/controller/console/mysql_dbversioner');
 const { default: local_mysql_template } = require('../../templates/aws/local/mysql');
+const { default: local_postgres_template } = require('../../templates/aws/local/postgres');
+const { custom_es, default: es_template } = require('../../templates/aws/resources/elasticsearch');
+
 const base_temp_path = `${path.join(__dirname, '../../')}temp`;
 
-describe('Test Serverless Generator', () => {
+describe('Syngenta Severless Generator Test Suite', () => {
     before(async () => {
         logger.log('====== START ======');
         // build package json
@@ -185,7 +191,7 @@ describe('Test Serverless Generator', () => {
             });
         });
     });
-    describe('Test Serverless Generator', () => {
+    describe('Test Resource Generator', () => {
         describe('Test Package Json Helper', async () => {
             describe('#create', () => {
                 describe('#addScripts', () => {
@@ -636,8 +642,7 @@ describe('Test Serverless Generator', () => {
                 const db_name = 'grower-tests';
                 before(async () => {
                     // delete neo4j stuff
-                    await rds_mysql.init({db_name});
-                    
+                    await rds_mysql.init({db_name, engine: 'mysql'});
                 });
                 describe('#rds_mysql', () => {
                     describe('was created properly', () => {
@@ -660,11 +665,13 @@ describe('Test Serverless Generator', () => {
                                     const _resource = await file.read_yaml(`${_path}/${resource}.yml`);
                                     switch(resource) {
                                         case 'rds-mysql':
-                                            assert.equal(JSON.stringify(_resource), JSON.stringify(rds_mysql_template({db_name})));
+                                            const _template = rds_mysql_template();
+                                            _template.Resources[db_name] = rds_dbinstance_template({db_name, engine: 'mysql'})
+                                            assert.equal(JSON.stringify(_resource), JSON.stringify(_template));
                                             break;
-                                        case 'security-group-rules':
-                                            assert.equal(JSON.stringify(_resource), JSON.stringify(security_group_rules_template()));
-                                            break;
+                                        // case 'security-group-rules':
+                                            // assert.equal(JSON.stringify(_resource), JSON.stringify(security_group_rules_template()));
+                                            // break;
                                         case 'security-group':
                                             assert.equal(JSON.stringify(_resource), JSON.stringify(security_group_template()));
                                             break;
@@ -828,27 +835,171 @@ describe('Test Serverless Generator', () => {
                 const db_name = 'grower-tests';
                 before(async () => {
                     // delete neo4j stuff
-                    await rds_postgres.init({db_name});
-                    
+                    await rds_postgres.init({db_name, engine: 'postgres'});
                 });
                 describe('was created properly', () => {
-                    it('make sure postgres local exists', () => {
+                    it('resources have been created correctly', () => {
+                        return new Promise(async resolve => {
+                            const _path = `${path.join(__dirname, '../../')}/aws/resources`;
+                            const aws_dir_exists = await file.path_exists(_path);
+                            assert.equal(aws_dir_exists, true);
+                            const resources = [
+                                'rds-postgres',
+                                'security-group-rules',
+                                'security-group',
+                                'vpc-rds'
+                            ];
+
+                            for (const resource of resources) {
+                                // ensure all these resources exist in our resources dir;
+                                const resource_exists = await file.path_exists(`${_path}/${resource}.yml`);
+                                assert.equal(resource_exists, true);
+                                const _resource = await file.read_yaml(`${_path}/${resource}.yml`);
+                                switch(resource) {
+                                    case 'rds-postgres':
+                                        const _template = rds_postgres_template();
+                                        _template.Resources[db_name] = rds_dbinstance_template({db_name, engine: 'postgres'})
+                                        assert.equal(JSON.stringify(_resource), JSON.stringify(_template));
+                                        break;
+                                    // case 'security-group-rules':
+                                        // assert.equal(JSON.stringify(_resource), JSON.stringify(security_group_rules_template()));
+                                        // break;
+                                    case 'security-group':
+                                        assert.equal(JSON.stringify(_resource), JSON.stringify(security_group_template()));
+                                        break;
+                                    case 'vpc-rds':
+                                        assert.equal(JSON.stringify(_resource), JSON.stringify(vpc_rds_template()));
+                                        break;
+                                }
+                            }
+
+                            resolve();
+                        })
+                    })
+                    it('make sure helper files have been copied over correctly', () => {
+                        return new Promise(async resolve => {
+                            // const _path = `${path.join(__dirname, '../../')}application/v1/controller/console/config`;
+                            // const path_exists = await file.path_exists(_path);
+                            // assert.equal(path_exists, true);
+                            // const helpers = [
+                            //     'dbConnector',
+                            //     'ssm',
+                            //     'helpers/mysql/connection',
+                            //     'helpers/mysql/dbBuilder',
+                            //     'helpers/mysql/index',
+                            //     'helpers/mysql/ssmInterface',
+                            //     'helpers/mysql/versionApplicator',
+                            //     'helpers/mysql/versionChecker'
+                            // ];
+
+                            // for(const helper of helpers) {
+                            //     const helper_path = `${_path}/${helper}.js`;
+                            //     const helper_exists = await file.path_exists(helper_path);
+                            //     assert.equal(helper_exists.toString(), 'true');
+                            // }
+                            resolve();
+                        })
+                    });
+                    it('make sure all the resources have been added to serverless file', () => {
+                        return new Promise(async resolve => {
+                            const expected = [
+                                'apigateway',
+                                'security-group',
+                                'vpc-rds',
+                                'rds-mysql',
+                                'rds-postgres'
+                            ]
+                            const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
+                            const { resources } = _serverless_yaml;
+                            
+                            for(const resource of resources) {
+                                const found = expected.find(x => `\${file(aws/resources/${x}.yml}` === resource);
+                                console.log('logging resource', resource);
+                                assert.notEqual(found, undefined);
+                            }
+                            resolve();
+                        });
+                    });
+                    it('make sure we got the db versioner function in the correct path', () => {
+                        return new Promise(async resolve => {
+                            // const _path = `${path.join(__dirname, '../../')}application/v1/controller/console/database-versioner.js`;
+                            // const exists = await file.path_exists(_path);
+                            // assert.equal(exists, true);
+                            // const versioner_code = await file.read_file(_path, true);
+                            // const template = mysql_versioner_template();
+                            // assert.equal(JSON.stringify(versioner_code.toString()), JSON.stringify(template));
+                            resolve();
+                        }); 
+                    });
+                    it('make sure we got db versioner in serverless', () => {
+                        return new Promise(async resolve => {
+                            // const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
+                            // const { functions } = _serverless_yaml;
+                            // const find_versioner_function = functions['v1-database-versioner'];
+                            // assert.equal(JSON.stringify(find_versioner_function), JSON.stringify({
+                            //     name: '${self:provider.stackTags.name}-v1-database-versioner',
+                            //     description: 'Applies versions to DB',
+                            //     handler: 'application/v1/controller/console/database-versioner.apply',
+                            //     memorySize: 512,
+                            //     timeout: 900
+                            // }));
+                            resolve();
+                        });
+                    });
+                    it('make sure we have our db versioner folder', () => {
+                        return new Promise(async resolve => {
+                            // const _path = `${path.join(__dirname, '../../')}db_versions`;
+                            // const exists = await file.path_exists(_path);
+                            // assert.equal(exists, true);
+                            resolve();
+                        }); 
+                    });
+                    it('make sure the local mysql folder is copied over', () => {
                         return new Promise(async resolve => {
                             const _path = `${path.join(__dirname, '../../')}aws/local/postgres.yml`;
-                            const path_exists = await file.path_exists(_path);
-                            assert.equal(path_exists, true);
+                            const exists = await file.path_exists(_path);
+                            assert.equal(exists, true);
+                            const local_mysql_file = await file.read_yaml(_path);
+                            assert.equal(JSON.stringify(local_mysql_file), JSON.stringify(local_postgres_template))
                             resolve();
                         });
                     });
-                    it('make sure postgres resource exists', () => {
+                    it('make sure both env\'s are correct', () => {
                         return new Promise(async resolve => {
-                            const _path = `${path.join(__dirname, '../../')}aws/resources/rds-postgres.yml`;
-                            const path_exists = await file.path_exists(_path);
-                            assert.equal(path_exists, true);
+                            const local_env_path = `${path.join(__dirname, '../../')}aws/envs/local.yml`;
+                            const local_env_exists = await file.path_exists(local_env_path);
+                            assert.equal(local_env_exists, true);
+                            const local_env = await file.read_yaml(local_env_path);
+                            const template_local_env = {
+                                POSTGRES_DB_NAME: db_name
+                            }
+
+                            assert.equal(local_env.environment.POSTGRES_DB_NAME, template_local_env.POSTGRES_DB_NAME);
+                        
+                            const cloud_env_path = `${path.join(__dirname, '../../')}aws/envs/cloud.yml`;
+                            const cloud_env_exists = await file.path_exists(cloud_env_path);
+                            assert.equal(cloud_env_exists, true);                            
+                            const cloud_env = await file.read_yaml(cloud_env_path);
+                            const template_cloud_env = {
+                                POSTGRES_DB_NAME: db_name
+                            }
+
+                            assert.equal(cloud_env.environment.POSTGRES_DB_NAME, template_cloud_env.POSTGRES_DB_NAME);
                             resolve();
                         });
                     });
-                });
+                    it('make sure the iamRoles are correct', () => {
+                        return new Promise(async resolve => {
+                            const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
+                            const { provider } = _serverless_yaml;
+                            const { iamRoleStatements } = provider;
+                            const find_versioner_function = iamRoleStatements.filter(x => x === '${file(aws/iamroles/ssm.yml)}').shift();
+                            assert.notEqual(find_versioner_function, undefined);
+                            // make sure the file actually exists, and is correct?
+                            resolve();
+                        });
+                    });
+                })
             })
             describe('#dynamodb', () => {
                 const db_name = 'serverless-test';
@@ -931,6 +1082,187 @@ describe('Test Serverless Generator', () => {
                         const find_versioner_function = iamRoleStatements.filter(x => x === '${file(aws/iamroles/dynamodb.yml)}').shift();
                         assert.notEqual(find_versioner_function, undefined);
                         // make sure the file actually exists, and is correct?
+                        resolve();
+                    });
+                });
+            });
+            describe('#elasticsearch', () => {
+                const data = {
+                    'grower-contracts': {
+                        index: 'enogen',
+                        type: 'contract'
+                    },
+                    'seed-stewardship': {
+                        index: 'enogen',
+                        type: 'steward'
+                    },
+                    'grain-ops': {
+                        index: 'grain',
+                        type: 'ops'
+                    }
+                }
+                before(async () => {
+                    // delete mysql stuff?
+                    for(const [domain_name, _data] of Object.entries(data)) {
+                        const { index, type } = _data;
+                        await elasticsearch.init({
+                            domain_name,
+                            index,
+                            type
+                        });
+                    }
+
+                });
+                it('make sure serverless file is created correctly', () => {
+                    return new Promise(async resolve => {
+                        const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
+                        const { custom } = _serverless_yaml;
+                        const { es } = custom;
+
+                        assert.notEqual(es, undefined);
+                        for(const [domain_name, _data] of Object.entries(data)) {
+                            assert.notEqual(es[domain_name], undefined);
+                            const test_yaml = {
+                                custom: {
+                                    es: {}
+                                }
+                            }
+                            test_yaml.custom.es[domain_name] = custom_es(domain_name, _data.index, _data.type, 'us-east-2');
+
+                            assert.equal(JSON.stringify(test_yaml.custom.es[domain_name]), JSON.stringify(es[domain_name]))
+                        }
+                        resolve();
+                    });
+                });
+                it('make sure resource file is created correctly', () => {
+                    return new Promise(async resolve => {
+                        const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}aws/resources/elasticsearch.yml`)
+                        const test_resource = {
+                            Resources: {},
+                            Outputs: {}
+                        }
+
+                        for(const [domain_name, _data] of Object.entries(data)) {
+                            test_resource.Resources[domain_name] = es_template(domain_name);
+                            test_resource.Outputs[`Elasticsearch${domain_name}Domain`] = {
+                                Value: {
+                                    Ref: domain_name
+                                }
+                            }
+                        
+                            test_resource.Outputs[`Elasticsearch${domain_name}Arn`] = {
+                                Value: null
+                            }
+                        
+                            test_resource.Outputs[`Elasticsearch${domain_name}Endpoint`] = {
+                                Value: null
+                            }
+    
+                            assert.equal(JSON.stringify(_serverless_yaml.Resources[domain_name]), JSON.stringify(test_resource.Resources[domain_name]));
+                            assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${domain_name}Domain`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${domain_name}Domain`]));
+                            assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${domain_name}Arn`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${domain_name}Arn`]));
+                            assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${domain_name}Endpoint`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${domain_name}Endpoint`]));
+                        }
+
+                        resolve();
+                    });
+                });
+                it('make sure both env\'s are correct', () => {
+                    return new Promise(async resolve => {
+                        const local_env_path = `${path.join(__dirname, '../../')}aws/envs/local.yml`;
+                        const local_env_exists = await file.path_exists(local_env_path);
+                        assert.equal(local_env_exists, true);
+                        const local_env = await file.read_yaml(local_env_path);
+
+                        const cloud_env_path = `${path.join(__dirname, '../../')}aws/envs/cloud.yml`;
+                        const cloud_env_exists = await file.path_exists(cloud_env_path);
+                        assert.equal(cloud_env_exists, true);
+                        const cloud_env = await file.read_yaml(cloud_env_path);
+
+                        for(const [domain_name, _data] of Object.entries(data)) {
+                            const template_local_env = {
+                                [`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`]: _data.index,
+                                [`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`]: _data.type,
+                                [`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`]: domain_name
+                            }
+    
+                            assert.equal(local_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`], template_local_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`]);
+                            assert.equal(local_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`], template_local_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`]);
+                            assert.equal(local_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`], template_local_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`]);
+                        
+                            const template_cloud_env = {
+                                [`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`]: _data.index,
+                                [`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`]: _data.type,
+                                [`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`]: {
+                                    'FN::GetAtt': [ `ElasticSearch${domain_name}`, 'DomainEndpoint' ]
+                                }
+                            }
+    
+                            assert.equal(cloud_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`], template_cloud_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`]);
+                            assert.equal(cloud_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`], template_cloud_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`]);
+                            assert.equal(JSON.stringify(cloud_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`]), JSON.stringify(template_cloud_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`]));
+                        }
+                        
+                        resolve();
+                    });
+                });
+            })
+            describe('#sqs', () => {
+                before(async () => {
+
+                });
+                it('resource created properly', () => {
+                    return new Promise(async resolve => {
+                        resolve();
+                    });
+                });
+                it('iam role created properly', () => {
+                    return new Promise(async resolve => {
+                        resolve();
+                    });
+                });
+            });
+            describe('#sns', () => {
+                before(async () => {
+
+                });
+                it('resource created properly', () => {
+                    return new Promise(async resolve => {
+                        resolve();
+                    });
+                });
+                it('iam role created properly', () => {
+                    return new Promise(async resolve => {
+                        resolve();
+                    });
+                });
+            });
+            describe('#s3', () => {
+                before(async () => {
+
+                });
+                it('resource created properly', () => {
+                    return new Promise(async resolve => {
+                        resolve();
+                    });
+                });
+                it('iam role created properly', () => {
+                    return new Promise(async resolve => {
+                        resolve();
+                    });
+                });
+            });
+            describe('#sns subscription', () => {
+                before(async () => {
+
+                });
+                it('resource created properly', () => {
+                    return new Promise(async resolve => {
+                        resolve();
+                    });
+                });
+                it('iam role created properly', () => {
+                    return new Promise(async resolve => {
                         resolve();
                     });
                 });
