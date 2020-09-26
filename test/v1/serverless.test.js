@@ -917,7 +917,6 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             
                             for(const resource of resources) {
                                 const found = expected.find(x => `\${file(aws/resources/${x}.yml}` === resource);
-                                console.log('logging resource', resource);
                                 assert.notEqual(found, undefined);
                             }
                             resolve();

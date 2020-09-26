@@ -26,7 +26,6 @@ const template = (args) => {
         },
         DeletionPolicy: "Snapshot"
     }
-    console.log('logging engine', engine);
     if(engine === "mysql") {
         _template.Properties.Engine = 'mysql';
         _template.Properties.EngineVersion = '5.7.26';
