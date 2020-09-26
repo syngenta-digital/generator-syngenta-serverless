@@ -14,16 +14,17 @@ const packagejson = require('../../helpers/package-json');
 const logger = require('../../helpers/logger');
 const serverless_helper = require('../../helpers/serverless');
 const { addPackage, addScript, create: create_package_json, read_me, delete_me } = require('../../helpers/package-json');
-const { default: neo4j_versioner_template } = require('../../templates/controller/console/neo4j_dbversioner');
-const { default: router_template } = require('../../templates/controller/apigateway/router');
+// const { default: neo4j_versioner_template } = require('../../templates/controller/console/neo4j_dbversioner');
+// const { default: mysql_versioner_template } = require('../../templates/controller/console/mysql_dbversioner');
+// const { default: router_template } = require('../../templates/controller/apigateway/router');
 const { default: rds_postgres_template } = require('../../templates/aws/resources/postgres/rds-postgres');
 const { default: rds_mysql_template } = require('../../templates/aws/resources/mysql/rds-mysql');
+const { default: sqs_template } = require('../../templates/aws/resources/sqs');
 const { default: rds_dbinstance_template } = require('../../templates/aws/resources/rds-dbinstance');
 const { default: security_group_rules_template } = require('../../templates/aws/resources/mysql/security-group-rules');
 const { default: security_group_template } = require('../../templates/aws/resources/mysql/security-group');
 const { default: vpc_rds_template } = require('../../templates/aws/resources/vpc');
 const { default: apigateway_template}  = require('../../templates/aws/resources/apigateway');
-const { default: mysql_versioner_template } = require('../../templates/controller/console/mysql_dbversioner');
 const { default: local_mysql_template } = require('../../templates/aws/local/mysql');
 const { default: local_postgres_template } = require('../../templates/aws/local/postgres');
 const { custom_es, default: es_template } = require('../../templates/aws/resources/elasticsearch');
@@ -49,7 +50,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
         if(config.DEBUG) {
             await file.delete_file(`${path.join(__dirname, '../../')}/serverless.yml`);
             await file.delete_file(`${path.join(__dirname, '../../')}/package2.json`);
-            // await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
+            await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}application`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}db_versions`);
         }
@@ -1080,8 +1081,8 @@ describe('Syngenta Severless Generator Test Suite', () => {
                         const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
                         const { provider } = _serverless_yaml;
                         const { iamRoleStatements } = provider;
-                        const find_versioner_function = iamRoleStatements.filter(x => x === '${file(aws/iamroles/dynamodb.yml)}').shift();
-                        assert.notEqual(find_versioner_function, undefined);
+                        const find_dynamo_role = iamRoleStatements.filter(x => x === '${file(aws/iamroles/dynamodb.yml)}').shift();
+                        assert.notEqual(find_dynamo_role, undefined);
                         // make sure the file actually exists, and is correct?
                         resolve();
                     });
@@ -1209,19 +1210,38 @@ describe('Syngenta Severless Generator Test Suite', () => {
                 });
             })
             describe('#sqs', () => {
+                const queue_name = 'GrowerContracts';
                 before(async () => {
                     await sqs.init({
-                        queue_name: 'GrowerContracts3',
+                        queue_name,
                         includeDLQ: true
                     })
                 });
                 it('resource created properly', () => {
                     return new Promise(async resolve => {
+                        const template = sqs_template(queue_name, false, true);
+                        const _path = `${path.join(__dirname, '../../')}aws/resources/sqs.yml`;
+                        const path_exists = await file.path_exists(_path);
+                        assert.equal(path_exists, true);
+                        const read_resource = await file.read_yaml(_path);
+                        const { Resources } = read_resource;
+                        assert.notEqual(Resources, undefined);
+                        assert.notEqual(Resources[`${queue_name}Queue`], undefined);
+                        assert.notEqual(Resources[`${queue_name}QueuePolicy`], undefined);
+                        assert.notEqual(Resources[`${queue_name}QueueDLQ`], undefined);
+                        assert.equal(JSON.stringify(Resources[`${queue_name}Queue`]), JSON.stringify(template[`${queue_name}Queue`]));
+                        assert.equal(JSON.stringify(Resources[`${queue_name}QueuePolicy`]), JSON.stringify(template[`${queue_name}QueuePolicy`]));
+                        assert.equal(JSON.stringify(Resources[`${queue_name}QueueDLQ`]), JSON.stringify(template[`${queue_name}QueueDLQ`]));
                         resolve();
                     });
                 });
                 it('iam role created properly', () => {
                     return new Promise(async resolve => {
+                        const _serverless_yaml = await file.read_yaml(`${path.join(__dirname, '../../')}serverless.yml`)
+                        const { provider } = _serverless_yaml;
+                        const { iamRoleStatements } = provider;
+                        const find_sqs_role = iamRoleStatements.filter(x => x === '${file(aws/iamroles/sqs.yml)}').shift();
+                        assert.notEqual(find_sqs_role, undefined);
                         resolve();
                     });
                 });

@@ -4,6 +4,7 @@ exports.default = (queue_name, isFifo = false, includeDLQ = false, timeout = 30,
             Type: 'AWS::SQS::Queue',
             Properties: {
               QueueName: `\${self:provider.stackTags.name}-${queue_name}-sqs`,
+              FifoQueue: isFifo,
               VisibilityTimeout: timeout
             }
         },
@@ -59,4 +60,6 @@ exports.default = (queue_name, isFifo = false, includeDLQ = false, timeout = 30,
             }
         }
     }
+
+    return template;
 }

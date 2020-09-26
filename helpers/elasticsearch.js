@@ -3,7 +3,7 @@ const { custom_es, default: es_template } = require('../templates/aws/resources/
 const path = require('path');
 const file = require('./file');
 const mock = require('../test/mock/data');
-const serverless_helper = require('../helpers/serverless');
+const serverless_helper = require('./serverless');
 
 const _environmentVariables = async (domain_name, index, type) => {
     const directories = [

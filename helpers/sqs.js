@@ -45,8 +45,8 @@ const _addIamRoles = async () => {
     return addIamRole('aws/iamroles/sqs.yml', 'sqs');
 }
 
-const _addResource = async (queue_name, isFifo = false, includeDLQ = false, timeout = 30) => {
-    const template = sqs_queue_template(queue_name, isFifo, includeDLQ, timeout);
+const _addResource = async (queue_name, isFifo = false, includeDLQ = false, timeout = 30, maxRedriveReceiveCount = 5) => {
+    const template = sqs_queue_template(queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount);
     
     const _path = `${path.join(__dirname, '..')}/aws/resources/sqs.yml`;
     const path_exists = await file.path_exists(_path);
@@ -58,13 +58,12 @@ const _addResource = async (queue_name, isFifo = false, includeDLQ = false, time
     }
 
     read_resource.Resources = { ...read_resource.Resources, ...template }
-    console.log('logging read_resource', JSON.stringify(read_resource));
     return file.write_yaml(_path, read_resource);
 }
 
 exports.init = async args => {
-    const {  queue_name, isFifo, includeDLQ, timeout } = args;
+    const {  queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount } = args;
     await _addIamRoles();
-    await _addResource(queue_name, isFifo, includeDLQ, timeout);
+    await _addResource(queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount);
     return true;
 }

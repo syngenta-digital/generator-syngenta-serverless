@@ -4,7 +4,7 @@ const FileSystem = require('pwd-fs');
 const { resolve } = require('path');
 const path = require('path');
 const rimraf = require("rimraf");
-const logger = require('../helpers/logger');
+const logger = require('./logger');
 const pfs = new FileSystem();
 
 const _read_file = (path, do_not_parse_json) => {
