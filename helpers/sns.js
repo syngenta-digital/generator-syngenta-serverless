@@ -24,7 +24,7 @@ const _addIamRoles = async () => {
 }
 
 const _addTopic = async (topic_name, dedup = false) => {
-    const _path = `${path.join(__dirname, '..')}/aws/resources/sns.yml`;
+    const _path = `${file.root()}aws/resources/sns.yml`;
 
     const path_exists = await file.path_exists(_path);
     let read_resource = {
@@ -41,7 +41,7 @@ const _addTopic = async (topic_name, dedup = false) => {
 }
 
 const _addSubscription = async (topic_name, queue_name) => {
-    const _path = `${path.join(__dirname, '..')}/aws/resources/sns.yml`;
+    const _path = `${file.root()}aws/resources/sns.yml`;
     const path_exists = await file.path_exists(_path);
     let read_resource = {
         Resources: {}
@@ -55,11 +55,20 @@ const _addSubscription = async (topic_name, queue_name) => {
     return file.write_yaml(_path, read_resource);
 }
 
-exports.init = async args => {
-    const { topic_name, queue_name, dedup } = args;
+exports.addTopic = async args => {
+    const { topic_name, dedup } = args;
     await _addServerlessVariables();
     await _addIamRoles();
     await _addTopic(topic_name, dedup);
+    
+    return true;
+}
+
+exports.addSubscription = async args => {
+    const { topic_name, queue_name } = args;
+    await _addServerlessVariables();
+    await _addIamRoles();
     await _addSubscription(topic_name, queue_name);
     return true;
 }
+

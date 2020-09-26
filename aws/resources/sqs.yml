@@ -1,0 +1,40 @@
+Resources:
+  GrowerContractsQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: '${self:provider.stackTags.name}-GrowerContracts-sqs'
+      FifoQueue: false
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn:
+          'Fn::GetAtt':
+            - GrowerContractsQueueDLQ
+            - Arn
+          maxReceiveCount: 5
+  GrowerContractsQueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    Properties:
+      Queues:
+        - Ref: GrowerContractsQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - 'sqs:CreateQueue'
+              - 'sqs:DeleteMessage'
+              - 'sqs:DeleteQueue'
+              - 'sqs:GetQueueUrl'
+              - 'sqs:ListQueues'
+              - 'sqs:ReceiveMessage'
+              - 'sqs:SendMessage'
+            Resource:
+              'Fn::GetAtt':
+                - GrowerContractsQueue
+                - Arn
+  GrowerContractsQueueDLQ:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: '${self:provider.stackTags.name}-GrowerContracts-sqs-dlq'
+      VisibilityTimeout: 30

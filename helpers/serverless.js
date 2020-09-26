@@ -17,14 +17,14 @@ const {default: security_group_rules_template}  = require('../templates/aws/reso
 const {default: vpc_rds_template}  = require('../templates/aws/resources/vpc');
 
 const { ddbTemplate, s3Template, snsTemplate, sqsTemplate, ssmTemplate } = require('../templates/aws/iamRoles');
-const SERVERLESS_LOCATION = `${path.join(__dirname, '../serverless.yml')}`;
-const IAM_ROLES_LOCATION = `${path.join(__dirname, '../aws/iamroles')}`;
-const RESOURCES_LOCATION = `${path.join(__dirname, '../aws/resources')}`;
+const SERVERLESS_LOCATION = `${file.root()}serverless.yml`;
+const IAM_ROLES_LOCATION = `${file.root()}aws/iamroles`;
+const RESOURCES_LOCATION = `${file.root()}aws/resources`;
 
 const _initServerless = (app, service) => {
     return new Promise(async (resolve) => {
         // TODO: this path stuff is way too confusing need to somehow reference parent dir.
-        const doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/templates/serverless/serverless.yml`, 'utf8'));
+        const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}templates/serverless/serverless.yml`, 'utf8'));
         doc.app = app;
         doc.service = service;
         await _createRouterFunction();
@@ -36,7 +36,7 @@ const _initServerless = (app, service) => {
 const _apigatewayHandler = (args) => {
     const { version, type, name, executor, memorySize = 256, timeout = 30 } = args;
 
-    const doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/templates/serverless/serverless.yml`, 'utf8'));
+    const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}templates/serverless/serverless.yml`, 'utf8'));
     const function_name = `${version}-${type}-${name}`;
     const apigateway_function = {
         name: `\${self:provider.stackTags.name}-${function_name}`,
@@ -59,7 +59,7 @@ const _apigatewayHandler = (args) => {
 
 const _databaseVersioner = (args) => {
     const { version, executor, memorySize = 256, timeout = 900 } = args;
-    const doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/templates/serverless/serverless.yml`, 'utf8'));
+    const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}templates/serverless/serverless.yml`, 'utf8'));
     const function_name = `${version}-database-versioner`;
     const database_versioner_function = {
         name: `\${self:provider.stackTags.name}-${function_name}`,
@@ -82,7 +82,7 @@ const _databaseVersioner = (args) => {
 
 const _sqsListener = (args) => {
     const { version, name, executor, queue, memorySize = 256, timeout = 15 } = args;
-    const doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/templates/serverless/serverless.yml`, 'utf8'));
+    const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}templates/serverless/serverless.yml`, 'utf8'));
     const function_name = `${version}-${name}`;
     const sqs_listener_function = {
         name: `\${self:provider.stackTags.name}-${function_name}`,
@@ -125,7 +125,7 @@ const _createRouterFunction = async () => {
         name: 'syngenta-lambda-client'
     };
     await packagejson_helper.addPackage(package);
-    return file.write_file(`${path.join(__dirname, '..')}/application/v1/controller/apigateway/_router.js`, formatted)
+    return file.write_file(`${file.root()}application/v1/controller/apigateway/_router.js`, formatted)
 }
 
 
@@ -158,7 +158,7 @@ const _ssmIamRoleHandler = async (api_name) => {
 const _addFunction = async (args) => {
     // TODO: this path stuff is way too confusing need to somehow reference parent dir.
     const { hash_type } = args;
-    const doc = await file.read_yaml(`${path.join(__dirname, '..')}/serverless.yml`);
+    const doc = await file.read_yaml(`${file.root()}serverless.yml`);
     const new_function = functionHashMapper.get(hash_type)(args);
     if(!doc.functions) {
         doc.functions = {};
@@ -169,7 +169,7 @@ const _addFunction = async (args) => {
 }
 
 const dynamodb_handler = async (args) => {
-    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/dynamodb.yml`;
+    const _resource_path = `${file.root()}aws/resources/dynamodb.yml`;
     const does_resource_exist = await file.path_exists(_resource_path);
     let read_resource = null;
     if(!does_resource_exist) {
@@ -184,7 +184,7 @@ const dynamodb_handler = async (args) => {
 const _addVpcPort = async (args, engine) => {
     let port = null;
 
-    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/security-group-rules.yml`;
+    const _resource_path = `${file.root()}aws/resources/security-group-rules.yml`;
     const does_resource_exist = await file.path_exists(_resource_path);
 
     if(!does_resource_exist) {
@@ -243,7 +243,7 @@ const _addVpcPort = async (args, engine) => {
 }
 
 const rds_mysql_handler = async (args) => {
-    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/rds-mysql.yml`;
+    const _resource_path = `${file.root()}aws/resources/rds-mysql.yml`;
     const does_resource_exist = await file.path_exists(_resource_path);
     let read_resource = null;
     if(!does_resource_exist) {
@@ -258,7 +258,7 @@ const rds_mysql_handler = async (args) => {
 }
 
 const rds_postgres_handler = async (args) => {
-    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/rds-postgres.yml`;
+    const _resource_path = `${file.root()}aws/resources/rds-postgres.yml`;
     const does_resource_exist = await file.path_exists(_resource_path);
     let read_resource = null;
     if(!does_resource_exist) {
@@ -273,7 +273,7 @@ const rds_postgres_handler = async (args) => {
 }
 
 const security_group_rules_handler = async () => {
-    const _resource_path = `${path.join(__dirname, '..')}/aws/resources/security-group-rules.yml`;
+    const _resource_path = `${file.root()}aws/resources/security-group-rules.yml`;
     const does_resource_exist = await file.path_exists(_resource_path);
     let read_resource = null;
     if(!does_resource_exist) {
@@ -321,7 +321,7 @@ const _createResource = async (args) => {
 const _addResource = async (resource, args) => {
     await _resourcesDirectoriesExist();
     // TODO: this path stuff is way too confusing need to somehow reference parent dir.
-    const doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/serverless.yml`, 'utf8'));
+    const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}serverless.yml`, 'utf8'));
     if(!doc.resources) {
         doc.resources = [];
     }
@@ -350,7 +350,7 @@ const _resourcesDirectoriesExist = async () => {
     ]
     for (const dir of directories) {
         const does_exist = await file.path_exists(dir)
-        if (!does_exist) await file.create_directory(`${path.join(__dirname, '..')}/${dir}`);
+        if (!does_exist) await file.create_directory(`${file.root()}${dir}`);
     }
 
     return true;
@@ -363,7 +363,7 @@ const _iamRoleDirectoriesExist = async () => {
     ]
     for (const dir of directories) {
         const does_exist = await file.path_exists(dir)
-        if (!does_exist) await file.create_directory(`${path.join(__dirname, '..')}/${dir}`);
+        if (!does_exist) await file.create_directory(`${file.root()}${dir}`);
     }
 
     return true;
@@ -371,7 +371,7 @@ const _iamRoleDirectoriesExist = async () => {
 
 const _addPlugin = async (plugin) => {
     // TODO: this path stuff is way too confusing need to somehow reference parent dir.
-    const _path = `${path.join(__dirname, '..')}/serverless.yml`;
+    const _path = `${file.root()}serverless.yml`;
     let doc = yaml.safeLoad(fs.readFileSync(_path, 'utf8'));
     const { plugins } = doc;
     if (!plugins) {
@@ -385,7 +385,7 @@ const _addPlugin = async (plugin) => {
 const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucket_name) => {
     // TODO: this path stuff is way too confusing need to somehow reference parent dir.
     await _iamRoleDirectoriesExist();
-    let doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/serverless.yml`, 'utf8'));
+    let doc = yaml.safeLoad(fs.readFileSync(`${file.root()}serverless.yml`, 'utf8'));
     const { provider } = doc;
     const { iamRoleStatements } = provider;
     const iamrole = `\${file(${_path})}`;
@@ -454,7 +454,7 @@ exports.addIamRole = async (path, service, api_name, bucket_name) => {
  * @param {data} data data is a key/value object that simply contains a key and a value to add to the custom serverless variables.
  */
 exports.addCustom = async (data) => {
-    const doc = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '..')}/serverless.yml`, 'utf8'));
+    const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}serverless.yml`, 'utf8'));
     doc.custom[data.key] = data.value;
     await file.write_yaml(SERVERLESS_LOCATION, doc);
 }

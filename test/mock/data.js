@@ -1,9 +1,9 @@
 const yaml = require('js-yaml');
-const path = require('path');
 const fs = require('fs');
+const file = require('../../helpers/file');
 const mock_guid = 'ce3710ae-aef8-4997-a349-a71e331e4cbb';
 const mock_date = '2020-08-12T01:15:36.062Z';
-const mock_serverless_json = yaml.safeLoad(fs.readFileSync(`${path.join(__dirname, '../..')}/templates/serverless/serverless.yml`, 'utf8'));
+const mock_serverless_json = yaml.safeLoad(fs.readFileSync(`${file.root()}templates/serverless/serverless.yml`, 'utf8'));
 const mock_app = 'grower';
 const mock_service = 'contracts';
 const mock_version = 'v1';

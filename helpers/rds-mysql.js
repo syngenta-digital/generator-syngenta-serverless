@@ -16,7 +16,7 @@ const { default: local_mysql_template } = require('../templates/aws/local/mysql'
 const { addPackage, create: create_package_json } = require('./package-json');
 
 const _localMysql = async (db_name = 'syngenta-generated-test-database') => {
-    const _path = `${path.join(__dirname, '..')}/aws/local/mysql.yml`;
+    const _path = `${file.root()}aws/local/mysql.yml`;
     const directories = [
         'aws',
         'aws/local'
@@ -53,7 +53,7 @@ const _environmentVariables = async (db_name) => {
         'aws/envs'
     ]
     await file.doesLocalDirectoriesExist(directories);
-    const local_env_path = `${path.join(__dirname, '..')}/aws/envs/local.yml`;
+    const local_env_path = `${file.root()}aws/envs/local.yml`;
     const local_env_exists = await file.path_exists(local_env_path);
     if(!local_env_exists) {
         // const 
@@ -69,7 +69,7 @@ const _environmentVariables = async (db_name) => {
     
     await file.write_yaml(local_env_path, local_env);
 
-    const cloud_env_path = `${path.join(__dirname, '..')}/aws/envs/cloud.yml`;
+    const cloud_env_path = `${file.root()}aws/envs/cloud.yml`;
     const cloud_env_exists = await file.path_exists(cloud_env_path);
 
     if(!cloud_env_exists) {
@@ -100,7 +100,7 @@ const _createVersionerFunction = async () => {
     ]
     await file.doesLocalDirectoriesExist(directories);
     const formatted = formatter.format(versioner_template());
-    await file.write_file(`${path.join(__dirname, '..')}/application/v1/controller/console/database-versioner.js`, formatted);
+    await file.write_file(`${file.root()}application/v1/controller/console/database-versioner.js`, formatted);
     await _dbConnector();
     await _ssm();
     return serverless_helper.addFunction({
@@ -115,8 +115,8 @@ const _createVersionerFunction = async () => {
 //TODO: this is wrong handler: application/v1/controller/console/_router.apply
 // also template has it .applyVersion and in serverless we say apply, fix dude.
 const _addMysqlDatabaseVersioner = async () => {
-    if(!await file.path_exists(`${path.join(__dirname, '..')}/db_versions`)) {
-        await file.create_directory(`${path.join(__dirname, '..')}/db_versions`);
+    if(!await file.path_exists(`${file.root()}db_versions`)) {
+        await file.create_directory(`${file.root()}db_versions`);
     }
     const packages = [
         {
@@ -158,8 +158,8 @@ const _dbConnector = async () => {
     ]
     await file.doesLocalDirectoriesExist(directories);
     const formatted = formatter.format(db_connector_template);
-    await file.write_file(`${path.join(__dirname, '..')}/application/v1/controller/console/config/dbConnector.js`, formatted);
-    return file.copy_directory(`${path.join(__dirname, '..')}/templates/controller/console/helpers`, `${path.join(__dirname, '..')}/application/v1/controller/console/config`);
+    await file.write_file(`${file.root()}application/v1/controller/console/config/dbConnector.js`, formatted);
+    return file.copy_directory(`${file.root()}templates/controller/console/helpers`, `${file.root()}application/v1/controller/console/config`);
 }
 
 const _ssm = async () => {
@@ -172,8 +172,8 @@ const _ssm = async () => {
     ]
     await file.doesLocalDirectoriesExist(directories);
     const formatted = formatter.format(ssm_template);
-    await file.write_file(`${path.join(__dirname, '..')}/application/v1/controller/console/config/ssm.js`, formatted);
-    return file.copy_directory(`${path.join(__dirname, '..')}/templates/controller/console/helpers`, `${path.join(__dirname, '..')}/application/v1/controller/console/config`);
+    await file.write_file(`${file.root()}application/v1/controller/console/config/ssm.js`, formatted);
+    return file.copy_directory(`${file.root()}templates/controller/console/helpers`, `${file.root()}application/v1/controller/console/config`);
 }
 
 const _iamRoles = async () => {

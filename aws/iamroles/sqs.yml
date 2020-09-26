@@ -1,0 +1,6 @@
+Effect: Allow
+Action:
+  - 'sqs:SendMessage'
+  - 'sqs:ReceiveMessage'
+Resource:
+  - '${self:custom.arn.sqs}'

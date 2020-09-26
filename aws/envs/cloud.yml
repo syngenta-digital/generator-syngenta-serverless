@@ -1,0 +1,48 @@
+environment:
+  APP_NAME: '${self:app}-${self:service}'
+  SERVICE: '${self:app}-${self:service}'
+  STACK: '${self:provider.stackTags.name}'
+  STAGE: '${self:provider.stage}'
+  REGION: '${self:provider.region}'
+  DB_NAME: grower-tests
+  DB_APP_USER: grower-tests
+  DB_HOST:
+    'Fn::GetAtt':
+      - growertestsDB
+      - Endpoint.Address
+  DB_MASTER_USER: root
+  DB_MASTER_PASS: root_password
+  POSTGRES_DB_NAME: grower-tests
+  DYNAMO_SERVERLESS_TEST: '${self:provider.stackTags.name}-serverless-test'
+  ELASTICSEARCH_grower_contracts_INDEX: enogen
+  ELASTICSEARCH_grower_contracts_TYPE: contract
+  ELASTICSEARCH_GROWER_CONTRACTS_DOMAIN:
+    'FN::GetAtt':
+      - ElasticSearchgrower-contracts
+      - DomainEndpoint
+  ELASTICSEARCH_seed_stewardship_INDEX: enogen
+  ELASTICSEARCH_seed_stewardship_TYPE: steward
+  ELASTICSEARCH_SEED_STEWARDSHIP_DOMAIN:
+    'FN::GetAtt':
+      - ElasticSearchseed-stewardship
+      - DomainEndpoint
+  ELASTICSEARCH_grain_ops_INDEX: grain
+  ELASTICSEARCH_grain_ops_TYPE: ops
+  ELASTICSEARCH_GRAIN_OPS_DOMAIN:
+    'FN::GetAtt':
+      - ElasticSearchgrain-ops
+      - DomainEndpoint
+authorizer:
+  arn: false
+  name: false
+  type: false
+  identitySource: false
+  resultTtlInSeconds: false
+cors:
+  origin: '*'
+  allowCredentials: false
+  headers:
+    - Content-Type
+    - x-master-key
+    - x-api-key
+    - x-user-token

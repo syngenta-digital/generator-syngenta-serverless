@@ -11,7 +11,7 @@ const _environmentVariables = async (domain_name, index, type) => {
         'aws/envs'
     ]
     await file.doesLocalDirectoriesExist(directories);
-    const local_env_path = `${path.join(__dirname, '..')}/aws/envs/local.yml`;
+    const local_env_path = `${file.root()}aws/envs/local.yml`;
     const local_env_exists = await file.path_exists(local_env_path);
     if(!local_env_exists) {
         await file.write_yaml(local_env_path, local_env_template);
@@ -23,7 +23,7 @@ const _environmentVariables = async (domain_name, index, type) => {
     
     await file.write_yaml(local_env_path, local_env);
 
-    const cloud_env_path = `${path.join(__dirname, '..')}/aws/envs/cloud.yml`;
+    const cloud_env_path = `${file.root()}aws/envs/cloud.yml`;
     const cloud_env_exists = await file.path_exists(cloud_env_path);
 
     if(!cloud_env_exists) {
@@ -40,7 +40,7 @@ const _environmentVariables = async (domain_name, index, type) => {
 }
  
 const _addServerlessVariables = async (domain_name, index, type, region) => {
-    const _path = `${path.join(__dirname, '..')}/serverless.yml`;
+    const _path = `${file.root()}serverless.yml`;
     const read_yaml = await file.read_yaml(_path);
     const { custom } = read_yaml;
     const { es } = custom;
@@ -59,7 +59,7 @@ const _addServerlessVariables = async (domain_name, index, type, region) => {
 }
 
 const _addDomain = async (domain_name, index, type) => {
-    const _path = `${path.join(__dirname, '..')}/aws/resources/elasticsearch.yml`;
+    const _path = `${file.root()}aws/resources/elasticsearch.yml`;
     const base = {
         Resources: {},
         Outputs: {}

@@ -11,7 +11,7 @@ const { default: local_env_template } = require('../templates/aws/envs/local');
 const { default: local_postgres_template } = require('../templates/aws/local/postgres');
 
 const _localPostgres = async () => {
-    const _path = `${path.join(__dirname, '..')}/aws/local/postgres.yml`;
+    const _path = `${file.root()}aws/local/postgres.yml`;
     const directories = [
         'aws',
         'aws/local'
@@ -26,7 +26,7 @@ const _environmentVariables = async (db_name) => {
         'aws/envs'
     ]
     await file.doesLocalDirectoriesExist(directories);
-    const local_env_path = `${path.join(__dirname, '..')}/aws/envs/local.yml`;
+    const local_env_path = `${file.root()}aws/envs/local.yml`;
     const local_env_exists = await file.path_exists(local_env_path);
     if(!local_env_exists) {
         // const 
@@ -37,7 +37,7 @@ const _environmentVariables = async (db_name) => {
     
     await file.write_yaml(local_env_path, local_env);
 
-    const cloud_env_path = `${path.join(__dirname, '..')}/aws/envs/cloud.yml`;
+    const cloud_env_path = `${file.root()}aws/envs/cloud.yml`;
     const cloud_env_exists = await file.path_exists(cloud_env_path);
 
     if(!cloud_env_exists) {

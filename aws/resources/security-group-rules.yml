@@ -1,0 +1,109 @@
+groups:
+  dev:
+    lambda:
+      inbound:
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 443
+          ToPort: 443
+      outbound:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          FromPort: -1
+          ToPort: -1
+    rds:
+      inbound:
+        - SourceSecurityGroupId:
+            Ref: LambdaSecurityGroup
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 3306
+          ToPort: 3306
+        - SourceSecurityGroupId:
+            Ref: LambdaSecurityGroup
+          IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 5432
+          ToPort: 5432
+  qa:
+    lambda:
+      inbound:
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 443
+          ToPort: 443
+      outbound:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          FromPort: -1
+          ToPort: -1
+    rds:
+      inbound:
+        - SourceSecurityGroupId:
+            Ref: LambdaSecurityGroup
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 3306
+          ToPort: 3306
+        - SourceSecurityGroupId:
+            Ref: LambdaSecurityGroup
+          IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 5432
+          ToPort: 5432
+  uat:
+    lambda:
+      inbound:
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 443
+          ToPort: 443
+      outbound:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          FromPort: -1
+          ToPort: -1
+  prod:
+    lambda:
+      inbound:
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 443
+          ToPort: 443
+      outbound:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          FromPort: -1
+          ToPort: -1
+    rds:
+      inbound:
+        - SourceSecurityGroupId:
+            Ref: LambdaSecurityGroup
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 3306
+          ToPort: 3306
+        - SourceSecurityGroupId:
+            Ref: LambdaSecurityGroup
+          IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 5432
+          ToPort: 5432

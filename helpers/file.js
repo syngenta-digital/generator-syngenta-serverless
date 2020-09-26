@@ -2,7 +2,7 @@ const fs = require('fs');
 const yaml = require('js-yaml');
 const FileSystem = require('pwd-fs');
 const { resolve } = require('path');
-const path = require('path');
+const _path = require('path');
 const rimraf = require("rimraf");
 const logger = require('./logger');
 const pfs = new FileSystem();
@@ -89,10 +89,14 @@ const _copy_directory = async (src, dest) => {
     return true;
 }
 
+const _get_root_project_directory = () => {
+    return `${_path.join(__dirname, '..')}/`
+}
+
 exports.doesLocalDirectoriesExist = async (directories) => {
     for (const dir of directories) {
         const does_exist = await _path_exists(dir);
-        if (!does_exist) await _create_directory(`${path.join(__dirname, '..')}/${dir}`);
+        if (!does_exist) await _create_directory(`${_get_root_project_directory()}${dir}`);
     }
 
     return true;
@@ -156,4 +160,8 @@ exports.delete_file = async (path) => {
 
 exports.path_exists = async (path) => {
     return _path_exists(path);
+}
+
+exports.root = () => {
+    return _get_root_project_directory();
 }

@@ -48,7 +48,7 @@ const _addIamRoles = async () => {
 const _addResource = async (queue_name, isFifo = false, includeDLQ = false, timeout = 30, maxRedriveReceiveCount = 5) => {
     const template = sqs_queue_template(queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount);
     
-    const _path = `${path.join(__dirname, '..')}/aws/resources/sqs.yml`;
+    const _path = `${file.root()}aws/resources/sqs.yml`;
     const path_exists = await file.path_exists(_path);
     let read_resource = {
         Resources: {}
