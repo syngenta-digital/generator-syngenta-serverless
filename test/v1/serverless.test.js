@@ -1256,33 +1256,28 @@ describe('Syngenta Severless Generator Test Suite', () => {
                         topic_name
                     })
                 });
-                it('resource created properly', () => {
+                it('topic resource created properly', () => {
+                    return new Promise(async resolve => {
+                        resolve();
+                    });
+                });
+                it('topic subscription created properly', () => {
                     return new Promise(async resolve => {
                         resolve();
                     });
                 });
                 it('iam role created properly', () => {
+                    return new Promise(async resolve => {
+                        resolve();
+                    });
+                });
+                it('serverless variables are set correctly', () => {
                     return new Promise(async resolve => {
                         resolve();
                     });
                 });
             });
             describe('#s3', () => {
-                before(async () => {
-
-                });
-                it('resource created properly', () => {
-                    return new Promise(async resolve => {
-                        resolve();
-                    });
-                });
-                it('iam role created properly', () => {
-                    return new Promise(async resolve => {
-                        resolve();
-                    });
-                });
-            });
-            describe('#sns subscription', () => {
                 before(async () => {
 
                 });

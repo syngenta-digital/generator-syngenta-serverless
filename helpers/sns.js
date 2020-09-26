@@ -1,11 +1,21 @@
 const path = require('path');
 const file = require('./file');
-const { addIamRole } = require('../helpers/serverless');
+const { addIamRole, addCustom } = require('../helpers/serverless');
 const { topic: sns_topic_template, subscription: sns_subscription_template } = require('../templates/aws/resources/sns');
 
 const _addServerlessVariables = async () => {
-    // ${self:custom.accounts.${self:provider.stage}}
-    // provide fake base ones
+    const accounts = {
+        key: 'accounts',
+        value: {
+            local: '0000000000',
+            dev: '1111111111',
+            qa: '2222222222',
+            uat: '3333333333',
+            prod: '4444444444'
+        }
+    }
+
+    await addCustom(accounts);
     return true;
 }
 
@@ -47,6 +57,7 @@ const _addSubscription = async (topic_name, queue_name) => {
 
 exports.init = async args => {
     const { topic_name, queue_name, dedup } = args;
+    await _addServerlessVariables();
     await _addIamRoles();
     await _addTopic(topic_name, dedup);
     await _addSubscription(topic_name, queue_name);
