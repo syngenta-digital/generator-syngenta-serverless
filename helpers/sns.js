@@ -1,66 +1,54 @@
-// ENV (allow for multiple though)
-// ELASTICSEARCH_DOMAIN:
-// Fn::GetAtt:
-//     - Elasticsearch
-//     - DomainEndpoint
-// ELASTICSEARCH_INDEX: ${self:custom.es.index}
-// ELASTICSEARCH_TYPE: ${self:custom.es.type}
-
-// serverless custom (allow for multiple? es.[name]?)
-// es:
-// domain: ${self:provider.stackName}-search
-// index: enogen ( ask from user )
-// type: contract ( ask from user )
-// version: 7.7
-// endpoints:
-//     local: search-${self:custom.es.domain}-l7p5piqzo3efmssb6zpbsnxbsm.us-east-2.es.amazonaws.com
-// volumes:
-//     local: 10
-//     dev: 10
-//     qa: 10
-//     uat: 20
-//     prod: 20
-// instance_size:
-//     local: t2.medium.elasticsearch
-//     dev: t2.medium.elasticsearch
-//     qa: t2.medium.elasticsearch
-//     uat: r5.xlarge.elasticsearch
-//     prod: r5.xlarge.elasticsearch
-// instance_count: '1'
-
-// add to serverless resources
-
-const _environmentVariables = async (domain_name, index, type) => {
-
-    return true;
-}
+const path = require('path');
+const file = require('./file');
+const { addIamRole } = require('../helpers/serverless');
+const { topic: sns_topic_template, subscription: sns_subscription_template } = require('../templates/aws/resources/sns');
 
 const _addServerlessVariables = async () => {
-
+    // ${self:custom.accounts.${self:provider.stage}}
+    // provide fake base ones
     return true;
 }
 
 const _addIamRoles = async () => {
-
-    return true;
+    return addIamRole('aws/iamroles/sns.yml', 'sns');
 }
 
-const _addDomain = async (domain_name, index, type) => {
+const _addTopic = async (topic_name, dedup = false) => {
+    const _path = `${path.join(__dirname, '..')}/aws/resources/sns.yml`;
 
-    return true;
+    const path_exists = await file.path_exists(_path);
+    let read_resource = {
+        Resources: {}
+    };
+
+    if(path_exists) {
+        read_resource = await file.read_yaml(_path);
+    }
+    
+    const template = sns_topic_template(topic_name, dedup);
+    read_resource.Resources[`${topic_name}Topic`] = template;
+    return file.write_yaml(_path, read_resource);
 }
 
-const _addEsToServerlessCustom = async (domain_name, index, type, region = 'us-east-2') => {
+const _addSubscription = async (topic_name, queue_name) => {
+    const _path = `${path.join(__dirname, '..')}/aws/resources/sns.yml`;
+    const path_exists = await file.path_exists(_path);
+    let read_resource = {
+        Resources: {}
+    };
+    if(path_exists) {
+        read_resource = await file.read_yaml(_path);
+    }
 
-    return true;
+    const template = sns_subscription_template(topic_name, queue_name);
+    read_resource.Resources[`${topic_name}Subscription`] = template;
+    return file.write_yaml(_path, read_resource);
 }
 
 exports.init = async args => {
-    const { domain_name, index, type, region } = args;
-    await _environmentVariables(domain_name, index, type);
-    await _addServerlessVariables();
+    const { topic_name, queue_name, dedup } = args;
     await _addIamRoles();
-    await _addDomain(domain_name, index, type);
-    await _addEsToServerlessCustom(domain_name, index, type, region);
+    await _addTopic(topic_name, dedup);
+    await _addSubscription(topic_name, queue_name);
     return true;
 }

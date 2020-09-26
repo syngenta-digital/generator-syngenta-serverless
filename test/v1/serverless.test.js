@@ -8,6 +8,7 @@ const elasticsearch = require('../../helpers/elasticsearch');
 const neo4j = require('../../helpers/neo4j');
 const dynamodb = require('../../helpers/dynamodb');
 const sqs = require('../../helpers/sqs');
+const sns = require('../../helpers/sns');
 const rds_mysql = require('../../helpers/rds-mysql');
 const rds_postgres = require('../../helpers/rds-postgres');
 const packagejson = require('../../helpers/package-json');
@@ -50,7 +51,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
         if(config.DEBUG) {
             await file.delete_file(`${path.join(__dirname, '../../')}/serverless.yml`);
             await file.delete_file(`${path.join(__dirname, '../../')}/package2.json`);
-            await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
+            // await file.force_delete_directory(`${path.join(__dirname, '../../')}aws`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}application`);
             await file.force_delete_directory(`${path.join(__dirname, '../../')}db_versions`);
         }
@@ -1247,8 +1248,13 @@ describe('Syngenta Severless Generator Test Suite', () => {
                 });
             });
             describe('#sns', () => {
+                const queue_name = 'GrowerContracts';
+                const topic_name = 'GrowerContractsNotifications';
                 before(async () => {
-
+                    sns.init({
+                        queue_name,
+                        topic_name
+                    })
                 });
                 it('resource created properly', () => {
                     return new Promise(async resolve => {
