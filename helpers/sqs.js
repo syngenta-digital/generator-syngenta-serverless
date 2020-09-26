@@ -29,38 +29,42 @@
 // instance_count: '1'
 
 // add to serverless resources
+const path = require('path');
+const file = require('./file');
+const mock = require('../test/mock/data');
+const formatter = require('esformatter');
+const { addIamRole } = require('../helpers/serverless');
+const { default: sqs_queue_template } = require('../templates/aws/resources/sqs');
 
-const _environmentVariables = async (domain_name, index, type) => {
+// const _addServerlessVariables = async () => {
 
-    return true;
-}
-
-const _addServerlessVariables = async () => {
-
-    return true;
-}
+//     return true;
+// }
 
 const _addIamRoles = async () => {
-
-    return true;
+    return addIamRole('aws/iamroles/sqs.yml', 'sqs');
 }
 
-const _addDomain = async (domain_name, index, type) => {
+const _addResource = async (queue_name, isFifo = false, includeDLQ = false, timeout = 30) => {
+    const template = sqs_queue_template(queue_name, isFifo, includeDLQ, timeout);
+    
+    const _path = `${path.join(__dirname, '..')}/aws/resources/sqs.yml`;
+    const path_exists = await file.path_exists(_path);
+    let read_resource = {
+        Resources: {}
+    };
+    if(path_exists) {
+        read_resource = await file.read_yaml(_path);
+    }
 
-    return true;
-}
-
-const _addEsToServerlessCustom = async (domain_name, index, type, region = 'us-east-2') => {
-
-    return true;
+    read_resource.Resources = { ...read_resource.Resources, ...template }
+    console.log('logging read_resource', JSON.stringify(read_resource));
+    return file.write_yaml(_path, read_resource);
 }
 
 exports.init = async args => {
-    const { domain_name, index, type, region } = args;
-    await _environmentVariables(domain_name, index, type);
-    await _addServerlessVariables();
+    const {  queue_name, isFifo, includeDLQ, timeout } = args;
     await _addIamRoles();
-    await _addDomain(domain_name, index, type);
-    await _addEsToServerlessCustom(domain_name, index, type, region);
+    await _addResource(queue_name, isFifo, includeDLQ, timeout);
     return true;
 }
