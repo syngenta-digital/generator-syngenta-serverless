@@ -1,38 +1,34 @@
-// ENV (allow for multiple though)
-// ELASTICSEARCH_DOMAIN:
-// Fn::GetAtt:
-//     - Elasticsearch
-//     - DomainEndpoint
-// ELASTICSEARCH_INDEX: ${self:custom.es.index}
-// ELASTICSEARCH_TYPE: ${self:custom.es.type}
+const file = require('./file');
+const { addIamRole, addCustom } = require('../helpers/serverless');
+const { bucket, public_policy, website } = require('../templates/aws/resources/s3');
+const { default: local_env_template } = require('../templates/aws/envs/local');
 
-// serverless custom (allow for multiple? es.[name]?)
-// es:
-// domain: ${self:provider.stackName}-search
-// index: enogen ( ask from user )
-// type: contract ( ask from user )
-// version: 7.7
-// endpoints:
-//     local: search-${self:custom.es.domain}-l7p5piqzo3efmssb6zpbsnxbsm.us-east-2.es.amazonaws.com
-// volumes:
-//     local: 10
-//     dev: 10
-//     qa: 10
-//     uat: 20
-//     prod: 20
-// instance_size:
-//     local: t2.medium.elasticsearch
-//     dev: t2.medium.elasticsearch
-//     qa: t2.medium.elasticsearch
-//     uat: r5.xlarge.elasticsearch
-//     prod: r5.xlarge.elasticsearch
-// instance_count: '1'
+const _environmentVariables = async bucket_name => {
+    const directories = [
+        'aws',
+        'aws/envs'
+    ]
+    await file.doesLocalDirectoriesExist(directories);
+    const local_env_path = `${file.root()}aws/envs/local.yml`;
+    const local_env_exists = await file.path_exists(local_env_path);
+    if(!local_env_exists) {
+        await file.write_yaml(local_env_path, local_env_template);
+    }
+    const local_env = await file.read_yaml(local_env_path);
+    local_env.environment[`${bucket_name.replace(/-/g, '_').toUpperCase()}_S3_BUCKET`] = `\${self:provider.stackTags.name}-${bucket_name}-storage`;
+    
+    await file.write_yaml(local_env_path, local_env);
 
-// add to serverless resources
+    const cloud_env_path = `${file.root()}aws/envs/cloud.yml`;
+    const cloud_env_exists = await file.path_exists(cloud_env_path);
 
-const _environmentVariables = async (domain_name, index, type) => {
+    if(!cloud_env_exists) {
+        await file.write_yaml(cloud_env_path, local_env_template);
+    }
 
-    return true;
+    const cloud_env = await file.read_yaml(cloud_env_path);
+    cloud_env.environment[`${bucket_name.replace(/-/g, '_').toUpperCase()}_S3_BUCKET`] = `\${self:provider.stackTags.name}-${bucket_name}-storage`;
+    return file.write_yaml(cloud_env_path, cloud_env);
 }
 
 const _addServerlessVariables = async () => {
@@ -41,26 +37,35 @@ const _addServerlessVariables = async () => {
 }
 
 const _addIamRoles = async () => {
-
-    return true;
+    return addIamRole('aws/iamroles/sqs.yml', 'sqs');
 }
 
-const _addDomain = async (domain_name, index, type) => {
+const _addBucket = async (bucket_name, isPublic, isWebsite) => {
+    const _path = `${file.root()}aws/resources/s3.yml`;
 
-    return true;
-}
+    const path_exists = await file.path_exists(_path);
+    let read_resource = {
+        Resources: {}
+    };
 
-const _addEsToServerlessCustom = async (domain_name, index, type, region = 'us-east-2') => {
-
-    return true;
+    if(path_exists) {
+        read_resource = await file.read_yaml(_path);
+    }
+    
+    const template = bucket(bucket_name);
+    read_resource.Resources[`${bucket_name}Storage`] = template;
+    if(isPublic) {
+        const public_policy_template = public_policy(bucket_name);
+        read_resource.Resources[`AttachmentsBucketAllowPublicReadPolicy${bucket_name}`] = public_policy_template;
+    }
+    return file.write_yaml(_path, read_resource);
 }
 
 exports.init = async args => {
-    const { domain_name, index, type, region } = args;
-    await _environmentVariables(domain_name, index, type);
+    const { bucket_name, isPublic, isWebsite } = args;
+    await _environmentVariables(bucket_name);
     await _addServerlessVariables();
     await _addIamRoles();
-    await _addDomain(domain_name, index, type);
-    await _addEsToServerlessCustom(domain_name, index, type, region);
+    await _addBucket(bucket_name, isPublic, isWebsite);
     return true;
 }
