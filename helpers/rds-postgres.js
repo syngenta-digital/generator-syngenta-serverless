@@ -62,13 +62,13 @@ const _addPostgresResources = async (args) => {
 }
 
 const _iamRoles = async () => {
-    return serverless_helper.addIamRole('aws/iamroles/ssm.yml', 'ssm');
+    return serverless_helper.addIamRole('./aws/iamroles/ssm.yml', 'ssm');
 }
 
 const _addServerlessVariables = async () => {
     const security_group_custom = {
         key: 'security_group',
-        value: '${file(aws/resources/security-group-rules.yml):groups}'
+        value: '${file(./aws/resources/security-group-rules.yml):groups}'
     }
 
     await serverless_helper.addCustom(security_group_custom);

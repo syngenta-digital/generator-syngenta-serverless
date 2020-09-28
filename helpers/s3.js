@@ -1,6 +1,6 @@
 const file = require('./file');
-const { addIamRole, addCustom } = require('../helpers/serverless');
-const { bucket, public_policy, website } = require('../templates/aws/resources/s3');
+const serverless_helper = require('./serverless');
+const { addIamRole, addCustom, addResources } = require('../helpers/serverless');
 const { default: local_env_template } = require('../templates/aws/envs/local');
 
 const _environmentVariables = async bucket_name => {
@@ -37,35 +37,19 @@ const _addServerlessVariables = async () => {
 }
 
 const _addIamRoles = async () => {
-    return addIamRole('aws/iamroles/sqs.yml', 'sqs');
+    return addIamRole('./aws/iamroles/s3.yml', 'sqs');
 }
 
-const _addBucket = async (bucket_name, isPublic, isWebsite) => {
-    const _path = `${file.root()}aws/resources/s3.yml`;
-
-    const path_exists = await file.path_exists(_path);
-    let read_resource = {
-        Resources: {}
-    };
-
-    if(path_exists) {
-        read_resource = await file.read_yaml(_path);
-    }
-    
-    const template = bucket(bucket_name);
-    read_resource.Resources[`${bucket_name}Storage`] = template;
-    if(isPublic) {
-        const public_policy_template = public_policy(bucket_name);
-        read_resource.Resources[`AttachmentsBucketAllowPublicReadPolicy${bucket_name}`] = public_policy_template;
-    }
-    return file.write_yaml(_path, read_resource);
+const _addResource = async (args) => {
+    const resource = ['s3'];
+    return serverless_helper.addResources(resource, args);
 }
 
 exports.init = async args => {
-    const { bucket_name, isPublic, isWebsite } = args;
+    const { bucket_name } = args;
     await _environmentVariables(bucket_name);
     await _addServerlessVariables();
     await _addIamRoles();
-    await _addBucket(bucket_name, isPublic, isWebsite);
+    await _addResource(args);
     return true;
 }

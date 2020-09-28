@@ -15,7 +15,8 @@ const {default: rds_dbinstance_template}  = require('../templates/aws/resources/
 const {default: security_group_template}  = require('../templates/aws/resources/mysql/security-group');
 const {default: security_group_rules_template}  = require('../templates/aws/resources/mysql/security-group-rules');
 const {default: vpc_rds_template}  = require('../templates/aws/resources/vpc');
-
+const { default: sqs_queue_template } = require('../templates/aws/resources/sqs');
+const { bucket, public_policy, website } = require('../templates/aws/resources/s3');
 const { ddbTemplate, s3Template, snsTemplate, sqsTemplate, ssmTemplate } = require('../templates/aws/iamRoles');
 const SERVERLESS_LOCATION = `${file.root()}serverless.yml`;
 const IAM_ROLES_LOCATION = `${file.root()}aws/iamroles`;
@@ -285,6 +286,46 @@ const security_group_rules_handler = async () => {
     return read_resource;
 }
 
+const s3_handler = async (args) => {
+    const _path = `${file.root()}aws/resources/s3.yml`;
+
+    const path_exists = await file.path_exists(_path);
+    let read_resource = {
+        Resources: {}
+    };
+
+    if(path_exists) {
+        read_resource = await file.read_yaml(_path);
+    }
+    
+    const template = bucket(args.bucket_name);
+    read_resource.Resources[`${args.bucket_name}Storage`] = template;
+    if(args.isPublic) {
+        const public_policy_template = public_policy(args.bucket_name);
+        read_resource.Resources[`AttachmentsBucketAllowPublicReadPolicy${args.bucket_name}`] = public_policy_template;
+    }
+
+    return read_resource;
+}
+
+const sqs_handler = async (args) => {
+    const { queue_name, isFifo = false, includeDLQ = false, timeout = 30, maxRedriveReceiveCount = 5 } = args;
+    const template = sqs_queue_template(queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount);
+    
+    const _path = `${file.root()}aws/resources/sqs.yml`;
+    const path_exists = await file.path_exists(_path);
+    let read_resource = {
+        Resources: {}
+    };
+    if(path_exists) {
+        read_resource = await file.read_yaml(_path);
+    }
+
+    read_resource.Resources = { ...read_resource.Resources, ...template }
+    return read_resource;
+}
+
+
 const _createResource = async (args) => {
     let fn = null;
     switch(args.resource) {
@@ -309,19 +350,24 @@ const _createResource = async (args) => {
         case 'vpc-rds':
             fn = vpc_rds_template;
             break;
+        case 's3':
+            fn = s3_handler;
+            break;
+        case 'sqs':
+            fn = sqs_handler;
+            break;
         default:
             throw new Error('invalid resource');
     }
 
     if(!fn) return null;
-
     return file.write_yaml(`${RESOURCES_LOCATION}/${args.resource}.yml`, await fn(args));
 }
 
 const _addResource = async (resource, args) => {
     await _resourcesDirectoriesExist();
     // TODO: this path stuff is way too confusing need to somehow reference parent dir.
-    const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}serverless.yml`, 'utf8'));
+    const doc = await file.read_yaml(`${file.root()}serverless.yml`);
     if(!doc.resources) {
         doc.resources = [];
     }
@@ -329,8 +375,9 @@ const _addResource = async (resource, args) => {
     const black_list_resources_from_serverless_file = [
         'security-group-rules'
     ]
-    
-    if(!black_list_resources_from_serverless_file.includes(resource)) doc.resources.push(`\${file(aws/resources/${resource}.yml}`);
+    const _resource = `\${file(./aws/resources/${resource}.yml}`;
+    const found = doc.resources.find(x => x === _resource);
+    if(!black_list_resources_from_serverless_file.includes(resource) && !found) doc.resources.push(_resource);
     await _createResource({ resource, ...args });
     return file.write_yaml(SERVERLESS_LOCATION, doc);
 }

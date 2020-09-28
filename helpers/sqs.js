@@ -33,8 +33,7 @@ const path = require('path');
 const file = require('./file');
 const mock = require('../test/mock/data');
 const formatter = require('esformatter');
-const { addIamRole } = require('../helpers/serverless');
-const { default: sqs_queue_template } = require('../templates/aws/resources/sqs');
+const { addIamRole, addResources } = require('../helpers/serverless');
 
 // const _addServerlessVariables = async () => {
 
@@ -42,28 +41,31 @@ const { default: sqs_queue_template } = require('../templates/aws/resources/sqs'
 // }
 
 const _addIamRoles = async () => {
-    return addIamRole('aws/iamroles/sqs.yml', 'sqs');
+    return addIamRole('./aws/iamroles/sqs.yml', 'sqs');
 }
 
-const _addResource = async (queue_name, isFifo = false, includeDLQ = false, timeout = 30, maxRedriveReceiveCount = 5) => {
-    const template = sqs_queue_template(queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount);
+const _addResource = async (args) => {
+    // const template = sqs_queue_template(queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount);
     
-    const _path = `${file.root()}aws/resources/sqs.yml`;
-    const path_exists = await file.path_exists(_path);
-    let read_resource = {
-        Resources: {}
-    };
-    if(path_exists) {
-        read_resource = await file.read_yaml(_path);
-    }
+    // const _path = `${file.root()}aws/resources/sqs.yml`;
+    // const path_exists = await file.path_exists(_path);
+    // let read_resource = {
+    //     Resources: {}
+    // };
+    // if(path_exists) {
+    //     read_resource = await file.read_yaml(_path);
+    // }
 
-    read_resource.Resources = { ...read_resource.Resources, ...template }
-    return file.write_yaml(_path, read_resource);
+    // read_resource.Resources = { ...read_resource.Resources, ...template }
+    const resources = ['sqs'];
+    return addResources(resources, args);
+    // return file.write_yaml(_path, read_resource);
 }
 
 exports.init = async args => {
-    const {  queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount } = args;
+    // const {  queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount } = args;
     await _addIamRoles();
-    await _addResource(queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount);
+    // await _addResource(queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount);
+    await _addResource(args);
     return true;
 }

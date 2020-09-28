@@ -8,6 +8,7 @@ const neo4j = require('../../helpers/neo4j');
 const dynamodb = require('../../helpers/dynamodb');
 const sqs = require('../../helpers/sqs');
 const sns = require('../../helpers/sns');
+const s3 = require('../../helpers/s3');
 const rds_mysql = require('../../helpers/rds-mysql');
 const rds_postgres = require('../../helpers/rds-postgres');
 const packagejson = require('../../helpers/package-json');
@@ -21,6 +22,7 @@ const { default: rds_postgres_template } = require('../../templates/aws/resource
 const { default: rds_mysql_template } = require('../../templates/aws/resources/mysql/rds-mysql');
 const { topic: sns_topic_template, subscription: sns_subscription_template } = require('../../templates/aws/resources/sns');
 const { default: sqs_template } = require('../../templates/aws/resources/sqs');
+const { bucket: s3_bucket_template, public_policy: s3_public_policy_template } = require('../../templates/aws/resources/s3');
 const { default: rds_dbinstance_template } = require('../../templates/aws/resources/rds-dbinstance');
 const { default: security_group_rules_template } = require('../../templates/aws/resources/mysql/security-group-rules');
 const { default: security_group_template } = require('../../templates/aws/resources/mysql/security-group');
@@ -725,7 +727,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                     const { resources } = _serverless_yaml;
                                     
                                     for(const resource of resources) {
-                                        const found = expected.find(x => `\${file(aws/resources/${x}.yml}` === resource);
+                                        const found = expected.find(x => `\${file(./aws/resources/${x}.yml}` === resource);
                                         assert.notEqual(found, undefined);
                                     }
                                     resolve();
@@ -827,8 +829,8 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                     const _serverless_yaml = await file.read_yaml(`${file.root()}serverless.yml`)
                                     const { provider } = _serverless_yaml;
                                     const { iamRoleStatements } = provider;
-                                    const find_versioner_function = iamRoleStatements.filter(x => x === '${file(aws/iamroles/ssm.yml)}').shift();
-                                    assert.notEqual(find_versioner_function, undefined);
+                                    const find_ssm_role = iamRoleStatements.filter(x => x === '${file(./aws/iamroles/ssm.yml)}').shift();
+                                    assert.notEqual(find_ssm_role, undefined);
                                     // make sure the file actually exists, and is correct?
                                     resolve();
                                 });
@@ -916,9 +918,8 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                 ]
                                 const _serverless_yaml = await file.read_yaml(`${file.root()}serverless.yml`)
                                 const { resources } = _serverless_yaml;
-                                
                                 for(const resource of resources) {
-                                    const found = expected.find(x => `\${file(aws/resources/${x}.yml}` === resource);
+                                    const found = expected.find(x => `\${file(./aws/resources/${x}.yml}` === resource);
                                     assert.notEqual(found, undefined);
                                 }
                                 resolve();
@@ -997,8 +998,8 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                 const _serverless_yaml = await file.read_yaml(`${file.root()}serverless.yml`)
                                 const { provider } = _serverless_yaml;
                                 const { iamRoleStatements } = provider;
-                                const find_versioner_function = iamRoleStatements.filter(x => x === '${file(aws/iamroles/ssm.yml)}').shift();
-                                assert.notEqual(find_versioner_function, undefined);
+                                const find_ssm_role = iamRoleStatements.filter(x => x === '${file(./aws/iamroles/ssm.yml)}').shift();
+                                assert.notEqual(find_ssm_role, undefined);
                                 // make sure the file actually exists, and is correct?
                                 resolve();
                             });
@@ -1083,7 +1084,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             const _serverless_yaml = await file.read_yaml(`${file.root()}serverless.yml`)
                             const { provider } = _serverless_yaml;
                             const { iamRoleStatements } = provider;
-                            const find_dynamo_role = iamRoleStatements.filter(x => x === '${file(aws/iamroles/dynamodb.yml)}').shift();
+                            const find_dynamo_role = iamRoleStatements.filter(x => x === '${file(./aws/iamroles/dynamodb.yml)}').shift();
                             assert.notEqual(find_dynamo_role, undefined);
                             // make sure the file actually exists, and is correct?
                             resolve();
@@ -1242,7 +1243,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             const _serverless_yaml = await file.read_yaml(`${file.root()}serverless.yml`)
                             const { provider } = _serverless_yaml;
                             const { iamRoleStatements } = provider;
-                            const find_sqs_role = iamRoleStatements.filter(x => x === '${file(aws/iamroles/sqs.yml)}').shift();
+                            const find_sqs_role = iamRoleStatements.filter(x => x === '${file(./aws/iamroles/sqs.yml)}').shift();
                             assert.notEqual(find_sqs_role, undefined);
                             resolve();
                         });
@@ -1294,7 +1295,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             const _serverless_yaml = await file.read_yaml(`${file.root()}serverless.yml`)
                             const { provider } = _serverless_yaml;
                             const { iamRoleStatements } = provider;
-                            const find_sqs_role = iamRoleStatements.filter(x => x === '${file(aws/iamroles/sns.yml)}').shift();
+                            const find_sqs_role = iamRoleStatements.filter(x => x === '${file(./aws/iamroles/sns.yml)}').shift();
                             assert.notEqual(find_sqs_role, undefined);
                             resolve();
                         });
@@ -1320,16 +1321,36 @@ describe('Syngenta Severless Generator Test Suite', () => {
                     });
                 });
                 describe('#s3', () => {
+                    const bucket_name = 'GrowerContracts';
                     before(async () => {
-
+                        await s3.init({
+                            bucket_name,
+                            isPublic: true
+                        })
                     });
                     it('resource created properly', () => {
                         return new Promise(async resolve => {
+                            const bucket_template = s3_bucket_template(bucket_name);
+                            const public_policy_template = s3_public_policy_template(bucket_name);
+                            const _path = `${file.root()}aws/resources/s3.yml`;
+                            const path_exists = await file.path_exists(_path);
+                            assert.equal(path_exists, true);
+                            const read_resource = await file.read_yaml(_path);
+                            const { Resources } = read_resource;
+                            assert.notEqual(Resources, undefined);
+                            assert.notEqual(Resources[`${bucket_name}Storage`], undefined);
+                            assert.equal(JSON.stringify(Resources[`${bucket_name}Storage`]), JSON.stringify(bucket_template));
+                            assert.equal(JSON.stringify(Resources[`AttachmentsBucketAllowPublicReadPolicy${bucket_name}`]), JSON.stringify(public_policy_template));
                             resolve();
                         });
                     });
                     it('iam role created properly', () => {
                         return new Promise(async resolve => {
+                            const _serverless_yaml = await file.read_yaml(`${file.root()}serverless.yml`)
+                            const { provider } = _serverless_yaml;
+                            const { iamRoleStatements } = provider;
+                            const find_s3_role = iamRoleStatements.filter(x => x === '${file(./aws/iamroles/s3.yml)}').shift();
+                            assert.notEqual(find_s3_role, undefined);
                             resolve();
                         });
                     });

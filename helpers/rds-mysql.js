@@ -28,7 +28,7 @@ const _localMysql = async (db_name = 'syngenta-generated-test-database') => {
 const _addServerlessVariables = async () => {
     const security_group_custom = {
         key: 'security_group',
-        value: '${file(aws/resources/security-group-rules.yml):groups}'
+        value: '${file(./aws/resources/security-group-rules.yml):groups}'
     }
 
     await serverless_helper.addCustom(security_group_custom);
@@ -177,7 +177,7 @@ const _ssm = async () => {
 }
 
 const _iamRoles = async () => {
-    return serverless_helper.addIamRole('aws/iamroles/ssm.yml', 'ssm');
+    return serverless_helper.addIamRole('./aws/iamroles/ssm.yml', 'ssm');
 }
 
 exports.init = async args => {

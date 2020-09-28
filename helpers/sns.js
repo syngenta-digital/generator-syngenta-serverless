@@ -20,7 +20,7 @@ const _addServerlessVariables = async () => {
 }
 
 const _addIamRoles = async () => {
-    return addIamRole('aws/iamroles/sns.yml', 'sns');
+    return addIamRole('./aws/iamroles/sns.yml', 'sns');
 }
 
 const _addTopic = async (topic_name, dedup = false) => {
@@ -55,12 +55,28 @@ const _addSubscription = async (topic_name, queue_name) => {
     return file.write_yaml(_path, read_resource);
 }
 
+// TODO: this needs to be moved to serverless, but want to think it over so doing this here for now.
+const _addToServerless = async () => {
+    const doc = await file.read_yaml(`${file.root()}serverless.yml`);
+    if(!doc.resources) {
+        doc.resources = [];
+    }
+    const resource = `\${file(./aws/resources/sns.yml}`;
+    const does_exist = doc.resources.find(x => x === resource);
+    if(!does_exist) {
+        doc.resources.push(resource);
+        await file.write_yaml(`${file.root()}serverless.yml`, doc);
+    }
+
+    return true;
+}
+
 exports.addTopic = async args => {
     const { topic_name, dedup } = args;
     await _addServerlessVariables();
     await _addIamRoles();
     await _addTopic(topic_name, dedup);
-    
+    await _addToServerless();
     return true;
 }
 
@@ -69,6 +85,7 @@ exports.addSubscription = async args => {
     await _addServerlessVariables();
     await _addIamRoles();
     await _addSubscription(topic_name, queue_name);
+    await _addToServerless();
     return true;
 }
 

@@ -84,7 +84,7 @@ const _addDynamoDBResources = async (db_name) => {
 }
 
 const _iamRoles = async () => {
-    return addIamRole('aws/iamroles/dynamodb.yml', 'dynamodb');
+    return addIamRole('./aws/iamroles/dynamodb.yml', 'dynamodb');
 }
 
 const _addPackageJsonPackages = async () => {
