@@ -1,11 +1,10 @@
 const fs = require('fs');
+const fs_extra = require('fs-extra');
 const yaml = require('js-yaml');
-const FileSystem = require('pwd-fs');
 const { resolve } = require('path');
-const _path = require('path');
+const path = require('path');
 const rimraf = require("rimraf");
 const logger = require('./logger');
-const pfs = new FileSystem();
 
 const _read_file = (path, do_not_parse_json) => {
     return new Promise((resolve) => {
@@ -34,9 +33,6 @@ const _path_exists = (path) => {
 }
 
 const _create_directory = path => {
-    // if (!fs.existsSync(path)) {
-    //     fs.mkdirSync(path);
-    // }
     return new Promise(async resolve => {
         fs.access(path, (err) => {
             if (!err) {
@@ -48,10 +44,7 @@ const _create_directory = path => {
                 resolve();
             })
         });
-    })
-
-
-    // return true;
+    });
 }
 
 const _write_file = (path, data) => {
@@ -80,17 +73,8 @@ const _write_yaml = (target_path, json) => {
     })
 }
 
-const _copy_directory = async (src, dest) => {
-    try {
-        await pfs.copy(src, dest);
-    } catch(e) {
-        logger.warn(e);
-    }
-    return true;
-}
-
 const _get_root_project_directory = () => {
-    return `${_path.join(__dirname, '..')}/`
+    return `${path.join(__dirname, '..')}/`
 }
 
 exports.doesLocalDirectoriesExist = async (directories) => {
@@ -107,7 +91,13 @@ exports.create_directory = async (path) => {
 }
 
 exports.copy_directory = async (src, dest) => {
-    return _copy_directory(src, dest);
+    fs_extra.copy(src, dest, err => {
+        if (err) return console.error(err)
+    })
+}
+
+exports.copy_file = async (src, dest) => {
+    return _copy_file(src, dest);
 }
 
 exports.delete_directory = async (path) => {
@@ -127,7 +117,6 @@ exports.force_delete_directory = path => {
             logger.error(e, null, false);
             resolve();
         }
-
     })
 }
 
@@ -151,8 +140,7 @@ exports.write_file = async (path, data) => {
 
 exports.delete_file = async (path) => {
     try {
-        return fs.unlinkSync(path)
-        //file removed
+        return fs.unlinkSync(path);
     } catch (err) {
         logger.error(err, false, false);
     }

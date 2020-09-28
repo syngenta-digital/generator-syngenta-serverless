@@ -58,6 +58,9 @@ describe('Syngenta Severless Generator Test Suite', () => {
             await file.force_delete_directory(`${file.root()}aws`);
             await file.force_delete_directory(`${file.root()}application`);
             await file.force_delete_directory(`${file.root()}db_versions`);
+            await file.force_delete_directory(`${file.root()}.nvmrc`);
+            await file.force_delete_directory(`${file.root()}.circleci`);
+            await file.force_delete_directory(`${file.root()}.github`);
         }
         logger.log('====== COMPLETE =====')
     })
@@ -308,6 +311,21 @@ describe('Syngenta Severless Generator Test Suite', () => {
                         return new Promise(async (resolve) => {
                             const _packagejson = await packagejson.read_me();
                             assert.equal(_packagejson.dependencies['syngenta-lambda-client'], '*');
+                            resolve();
+                        })
+                    });
+                    it('base files created propery', () => {
+                        return new Promise(async (resolve) => {
+                            const expected = [
+                                '.circleci/config.yml',
+                                '.github/dependabot.yml',
+                                '.nvmrc',
+                                '.npmrc',
+                            ]
+                            for(const _expect of expected) {
+                                const path_exists = await file.path_exists(_expect);
+                                assert.equal(path_exists, true);
+                            }
                             resolve();
                         })
                     });

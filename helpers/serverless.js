@@ -29,16 +29,57 @@ const _initServerless = (app, service) => {
         const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}templates/serverless/serverless.yml`, 'utf8'));
         doc.app = app;
         doc.service = service;
+        await _addBaseFiles();
         await _createRouterFunction();
         // TODO: i think this will need to be changed if this is going to be a package
         resolve(file.write_yaml(SERVERLESS_LOCATION, doc));
     })
 }
 
-const _apigatewayHandler = (args) => {
+const _addBaseFiles = async () => {
+    const directories = [
+        '.circleci',
+        '.github'
+    ]
+    await file.doesLocalDirectoriesExist(directories);
+    const templates = [
+        {
+            src: '.circleci',
+            target: '.circleci/',
+            dir: true
+        },
+        {
+            src: '.github',
+            target: '.github/',
+            dir: true
+        },
+        {
+            src: '.npmrc',
+            target: '.npmrc'
+        },
+        {
+            src: '.nvmrc',
+            target: '.nvmrc'
+        }
+    ]
+
+    for(const template of templates) {
+        const _path = `${file.root()}${template.target}`;
+        if(template.dir) {
+            await file.copy_directory(`${file.root()}templates/basic/${template.src}`, _path);
+        } else {
+            console.log(`${file.root()}templates/basic/${template.src}`, _path)
+            await file.copy_directory(`${file.root()}templates/basic/${template.src}`, _path);
+        }
+    }
+
+    return true;
+}
+
+const _apigatewayHandler = async (args) => {
     const { version, type, name, executor, memorySize = 256, timeout = 30 } = args;
 
-    const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}templates/serverless/serverless.yml`, 'utf8'));
+    const doc = await file.read_yaml(`${file.root()}templates/serverless/serverless.yml`);
     const function_name = `${version}-${type}-${name}`;
     const apigateway_function = {
         name: `\${self:provider.stackTags.name}-${function_name}`,

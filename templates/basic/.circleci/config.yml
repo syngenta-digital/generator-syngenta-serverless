@@ -1,0 +1,151 @@
+version: 2.1
+orbs:
+    aws-cli: circleci/aws-cli@1.2.1
+    slack: circleci/slack@3.4.2
+commands:
+    dev-setup:
+        steps:
+            - run:
+                command: |
+                    echo "export DEPLOY_STAGE=dev" >> $BASH_ENV
+                    source $BASH_ENV
+    stage-setup:
+        steps:
+            - run:
+                command: |
+                    STAGE=$(echo $CIRCLE_TAG | cut -f1 -d'/')
+                    echo "export DEPLOY_STAGE=$STAGE" >> $BASH_ENV
+                    source $BASH_ENV
+    node-install:
+        steps:
+            - run: npm install
+    node-linter:
+        steps:
+            - run: npm run lint -- --format html --output-file ./coverage/lint/index.html
+            - store_artifacts:
+                path: ./coverage
+    node-test:
+        steps:
+            - run:
+                when: always
+                command: npm run test -- --reporter mocha-multi-reporters --reporter-options configFile=./test/reporter-config.json
+                environment:
+                    MOCHAWESOME_REPORTFILENAME: index.html
+                    MOCHAWESOME_REPORTDIR: ./coverage/unit-test
+            - store_test_results:
+                path: ./coverage/unit-test
+            - store_artifacts:
+                path: ./coverage
+    node-report:
+        steps:
+            - run: npm run report -- --reporter=html
+            - store_artifacts:
+                path: ./coverage
+    publish-results:
+        steps:
+            - run: npm run sct -- create s3-cloudfront --stage dev --domain test-reports.syndpe.com --role CICD
+            - run: aws s3 sync ./coverage s3://dev-test-reports.syndpe.com/$CIRCLE_PROJECT_REPONAME --profile dev --delete
+            - run: npm run sct -- create cloudfront-invalidation --stage dev --domain test-reports.syndpe.com --role CICD
+    aws-profiles:
+        steps:
+            - run: npm run sct -- create aws-profiles --region us-east-2 --key $AWS_ACCESS_KEY_ID --secret $AWS_SECRET_ACCESS_KEY
+    documentation:
+        steps:
+            - run: npm run sct -- publish documentation
+    sls-package-s3-upload:
+        steps:
+            - run: npm run serverless -- package --stage $DEPLOY_STAGE --aws_envs cloud --region us-east-2 --aws-profile $DEPLOY_STAGE
+            - run: aws s3 sync .serverless s3://syngenta-cicd-build-artifacts/$CIRCLE_PROJECT_REPONAME/$DEPLOY_STAGE/$CIRCLE_SHA1
+            - run: rm -rf .serverless
+    create-apigateway:
+        steps:
+            - run: npm run sct -- create apigateway --stage $DEPLOY_STAGE --domain api.syndpe.com
+    s3-download-sls-deploy:
+        steps:
+            - run: mkdir .serverless
+            - run: aws s3 sync s3://syngenta-cicd-build-artifacts/$CIRCLE_PROJECT_REPONAME/$DEPLOY_STAGE/$CIRCLE_SHA1 .serverless
+            - run: npm run serverless -- deploy --package .serverless --stage $DEPLOY_STAGE --aws_envs cloud --region us-east-2 --aws-profile $DEPLOY_STAGE
+    run-lambdas:
+        steps:
+            - run: sleep 5
+            - run: npm run serverless -- invoke --function v1-console-create-default-types --stage $DEPLOY_STAGE --aws_envs cloud --region us-east-2 --aws-profile $DEPLOY_STAGE
+    slack-status:
+        steps:
+            - slack/status:
+                mentions: '${CIRCLE_USERNAME}, env=$DEPLOY_STAGE'
+    slack-error:
+        steps:
+            - slack/status:
+                fail_only: true
+                mentions: '${CIRCLE_USERNAME}, env=$DEPLOY_STAGE'
+jobs:
+    install-build-test:
+        docker:
+            - image: node:12
+        steps:
+            - checkout
+            - aws-cli/setup
+            - node-install
+            - aws-profiles
+            - node-linter
+            # - node-test
+            # - node-report
+            - slack-error
+    install-build-deploy:
+        docker:
+            - image: node:12
+        steps:
+            - stage-setup
+            - aws-cli/setup
+            - checkout
+            - node-install
+            - aws-profiles
+            - documentation
+            - sls-package-s3-upload
+            - create-apigateway
+            - s3-download-sls-deploy
+            - run-lambdas
+            - slack-status
+    deploy-dev:
+        docker:
+            - image: node:12
+        steps:
+            - dev-setup
+            - aws-cli/setup
+            - checkout
+            - node-install
+            - aws-profiles
+            - documentation
+            - sls-package-s3-upload
+            - create-apigateway
+            - s3-download-sls-deploy
+            - run-lambdas
+            - slack-error
+workflows:
+    install-build-deploy:
+        jobs:
+            - install-build-deploy:
+                context: aws-tools-cicd
+                filters:
+                    tags:
+                        only: /.*/
+                    branches:
+                        ignore: /.*/
+    install-build-test:
+        jobs:
+            - install-build-test:
+                context: aws-tools-cicd
+                filters:
+                    tags:
+                        ignore: /.*/
+                    branches:
+                        only: /.*/
+            - deploy-dev:
+                context: aws-tools-cicd
+                requires:
+                    - install-build-test
+                filters:
+                    tags:
+                        ignore: /.*/
+                    branches:
+                        only: master

@@ -15,9 +15,9 @@
         "aws-sdk": "^2.753.0",
         "esformatter": "^0.11.3",
         "fs": "0.0.1-security",
+        "fs-extra": "^9.0.1",
         "js-yaml": "^3.14.0",
-        "path": "^0.12.7",
-        "pwd-fs": "^1.2.13"
+        "path": "^0.12.7"
     },
     "devDependencies": {
         "chai": "^4.2.0",
