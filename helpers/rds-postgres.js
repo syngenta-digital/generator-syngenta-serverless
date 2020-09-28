@@ -61,8 +61,8 @@ const _addPostgresResources = async (args) => {
     return serverless_helper.addResources(resources, args);
 }
 
-const _iamRoles = async () => {
-    return serverless_helper.addIamRole('./aws/iamroles/ssm.yml', 'ssm');
+const _iamRoles = async (api_name) => {
+    return serverless_helper.addIamRole('./aws/iamroles/ssm.yml', 'ssm', api_name);
 }
 
 const _addServerlessVariables = async () => {
@@ -91,7 +91,7 @@ exports.init = async args => {
     await _addPostgresResources(args);
     await _environmentVariables(args.db_name);
     await _addServerlessVariables();
-    await _iamRoles();
+    await _iamRoles(args.api_name);
     await _localPostgres(args.db_name);
     return true;
 }

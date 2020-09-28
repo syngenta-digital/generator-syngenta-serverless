@@ -36,8 +36,8 @@ const _addServerlessVariables = async () => {
     return true;
 }
 
-const _addIamRoles = async () => {
-    return addIamRole('./aws/iamroles/s3.yml', 'sqs');
+const _addIamRoles = async (bucket_name) => {
+    return addIamRole('./aws/iamroles/s3.yml', 's3', null, bucket_name);
 }
 
 const _addResource = async (args) => {
@@ -49,7 +49,7 @@ exports.init = async args => {
     const { bucket_name } = args;
     await _environmentVariables(bucket_name);
     await _addServerlessVariables();
-    await _addIamRoles();
+    await _addIamRoles(bucket_name);
     await _addResource(args);
     return true;
 }

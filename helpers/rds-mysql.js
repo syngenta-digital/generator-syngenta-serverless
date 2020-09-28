@@ -176,8 +176,8 @@ const _ssm = async () => {
     return file.copy_directory(`${file.root()}templates/controller/console/helpers`, `${file.root()}application/v1/controller/console/config`);
 }
 
-const _iamRoles = async () => {
-    return serverless_helper.addIamRole('./aws/iamroles/ssm.yml', 'ssm');
+const _iamRoles = async (api_name) => {
+    return serverless_helper.addIamRole('./aws/iamroles/ssm.yml', 'ssm', api_name);
 }
 
 exports.init = async args => {
@@ -186,7 +186,7 @@ exports.init = async args => {
     await _addMysqlResources(args);
     await _environmentVariables(args.db_name);
     await _addServerlessVariables();
-    await _iamRoles();
+    await _iamRoles(args.api_name);
     await _localMysql(args.db_name);
     return true;
 }

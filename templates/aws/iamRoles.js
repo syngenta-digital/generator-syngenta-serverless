@@ -64,7 +64,7 @@ exports.sqsTemplate = () => {
   }
 }
 
-exports.ssmTemplate = (api_name) => {
+exports.ssmTemplate = (api_name = '*') => {
   return {
     Effect: 'Allow',
     Action: [

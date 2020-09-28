@@ -141,7 +141,24 @@ const _ddbIamRoleHandler = async () => {
 }
 
 const _s3IamRoleHandler = async (bucket_name) => {
-    return file.write_yaml(`${IAM_ROLES_LOCATION}/s3.yml`, s3Template(bucket_name));
+    const _path = `${IAM_ROLES_LOCATION}/s3.yml`;
+    const path_exists = await file.path_exists(_path);
+
+    if(!path_exists) {
+        console.log('path doesnt exist, creating now')
+        return file.write_yaml(`${IAM_ROLES_LOCATION}/s3.yml`, s3Template(bucket_name));
+    }
+
+    const read_resource = await file.read_yaml(_path);
+    const { Resource } = read_resource;
+    // 'arn:aws:s3:::${self:provider.stackTags.name}-pdf-storage/*'
+    const expected_arn = `arn:aws:s3:::\${self:provider.stackTags.name}-${bucket_name}/*`;
+    const find = Resource.find(x => x === expected_arn);
+    if(!find) {
+        read_resource.Resource.push(expected_arn);
+    }
+
+    return file.write_yaml(`${IAM_ROLES_LOCATION}/s3.yml`, read_resource);
 }
 
 const _snsIamRoleHandler = async () => {
@@ -153,7 +170,25 @@ const _sqsIamRoleHandler = async () => {
 }
 
 const _ssmIamRoleHandler = async (api_name) => {
-    return file.write_yaml(`${IAM_ROLES_LOCATION}/ssm.yml`, ssmTemplate(api_name));
+    const _path = `${IAM_ROLES_LOCATION}/s3.yml`;
+    const path_exists = await file.path_exists(_path);
+
+    if(!path_exists) {
+        console.log('path doesnt exist, creating now')
+        return file.write_yaml(`${IAM_ROLES_LOCATION}/s3.yml`, ssmTemplate(api_name));
+    }
+
+    const read_resource = await file.read_yaml(_path);
+    const { Resource } = read_resource;
+    // 'arn:aws:s3:::${self:provider.stackTags.name}-pdf-storage/*'
+    const expected_arn = `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stage}-${api_name}/*`;
+    const find = Resource.find(x => x === expected_arn);
+    if(!find) {
+        read_resource.Resource.push(expected_arn);
+    }
+
+    return file.write_yaml(`${IAM_ROLES_LOCATION}/ssm.yml`, read_resource);
+    // return file.write_yaml(`${IAM_ROLES_LOCATION}/ssm.yml`, ssmTemplate(api_name));
 }
 
 const _addFunction = async (args) => {
@@ -442,6 +477,8 @@ const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucke
     if(doc.provider.iamRoleStatements.indexOf(iamrole) === -1 && service !== 'apigateway') {
         doc.provider.iamRoleStatements.push(iamrole);
         await file.write_yaml(SERVERLESS_LOCATION, doc);
+        
+
         if (add_to_aws_directory) {
             switch (service) {
                 case 'dynamodb':
