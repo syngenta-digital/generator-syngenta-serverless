@@ -1044,7 +1044,6 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                 const _path = `${file.root()}aws/iamroles/ssm.yml`;
                                 const read_resource = await file.read_yaml(_path);
                                 const { Resource } = read_resource;
-                                console.log('logging Resource', Resource);
                                 const find = Resource.find(x => x === expected_arn);
                                 assert.notEqual(find, undefined);
                                 resolve();

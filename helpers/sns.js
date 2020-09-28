@@ -1,5 +1,5 @@
-const path = require('path');
 const file = require('./file');
+const serverless_helper = require('./serverless');
 const { addIamRole, addCustom } = require('../helpers/serverless');
 const { topic: sns_topic_template, subscription: sns_subscription_template } = require('../templates/aws/resources/sns');
 
@@ -71,11 +71,17 @@ const _addToServerless = async () => {
     return true;
 }
 
+const _addResource = async (topic_name, queue_name, is_subscription, dedup) => {
+    const resource = ['sns'];
+    return serverless_helper.addResources(resource, {topic_name, queue_name, is_subscription, dedup});
+}
+
 exports.addTopic = async args => {
     const { topic_name, dedup } = args;
     await _addServerlessVariables();
     await _addIamRoles();
-    await _addTopic(topic_name, dedup);
+    // await _addTopic(topic_name, dedup);
+    await _addResource(topic_name, null, false, dedup);
     await _addToServerless();
     return true;
 }
@@ -84,7 +90,8 @@ exports.addSubscription = async args => {
     const { topic_name, queue_name } = args;
     await _addServerlessVariables();
     await _addIamRoles();
-    await _addSubscription(topic_name, queue_name);
+    // await _addSubscription(topic_name, queue_name);
+    await _addResource(topic_name, queue_name, true);
     await _addToServerless();
     return true;
 }

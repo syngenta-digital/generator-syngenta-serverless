@@ -16,6 +16,7 @@ const {default: security_group_template}  = require('../templates/aws/resources/
 const {default: security_group_rules_template}  = require('../templates/aws/resources/mysql/security-group-rules');
 const {default: vpc_rds_template}  = require('../templates/aws/resources/vpc');
 const { default: sqs_queue_template } = require('../templates/aws/resources/sqs');
+const { topic: sns_topic_template, subscription: sns_subscription_template } = require('../templates/aws/resources/sns');
 const { bucket, public_policy, website } = require('../templates/aws/resources/s3');
 const { ddbTemplate, s3Template, snsTemplate, sqsTemplate, ssmTemplate } = require('../templates/aws/iamRoles');
 const SERVERLESS_LOCATION = `${file.root()}serverless.yml`;
@@ -204,7 +205,7 @@ const _addFunction = async (args) => {
     return new_function;
 }
 
-const dynamodb_handler = async (args) => {
+const dynamodb_resource_handler = async (args) => {
     const _resource_path = `${file.root()}aws/resources/dynamodb.yml`;
     const does_resource_exist = await file.path_exists(_resource_path);
     let read_resource = null;
@@ -278,7 +279,7 @@ const _addVpcPort = async (args, engine) => {
     return file.write_yaml(_resource_path, read_resource);
 }
 
-const rds_mysql_handler = async (args) => {
+const rds_mysql_resource_handler = async (args) => {
     const _resource_path = `${file.root()}aws/resources/rds-mysql.yml`;
     const does_resource_exist = await file.path_exists(_resource_path);
     let read_resource = null;
@@ -293,7 +294,7 @@ const rds_mysql_handler = async (args) => {
     return read_resource;
 }
 
-const rds_postgres_handler = async (args) => {
+const rds_postgres_resource_handler = async (args) => {
     const _resource_path = `${file.root()}aws/resources/rds-postgres.yml`;
     const does_resource_exist = await file.path_exists(_resource_path);
     let read_resource = null;
@@ -308,7 +309,7 @@ const rds_postgres_handler = async (args) => {
     return read_resource;
 }
 
-const security_group_rules_handler = async () => {
+const security_group_rules_resource_handler = async () => {
     const _resource_path = `${file.root()}aws/resources/security-group-rules.yml`;
     const does_resource_exist = await file.path_exists(_resource_path);
     let read_resource = null;
@@ -321,7 +322,7 @@ const security_group_rules_handler = async () => {
     return read_resource;
 }
 
-const s3_handler = async (args) => {
+const s3_resource_handler = async (args) => {
     const _path = `${file.root()}aws/resources/s3.yml`;
 
     const path_exists = await file.path_exists(_path);
@@ -343,7 +344,7 @@ const s3_handler = async (args) => {
     return read_resource;
 }
 
-const sqs_handler = async (args) => {
+const sqs_resource_handler = async (args) => {
     const { queue_name, isFifo = false, includeDLQ = false, timeout = 30, maxRedriveReceiveCount = 5 } = args;
     const template = sqs_queue_template(queue_name, isFifo, includeDLQ, timeout, maxRedriveReceiveCount);
     
@@ -360,6 +361,50 @@ const sqs_handler = async (args) => {
     return read_resource;
 }
 
+const _addTopic = async (topic_name, dedup = false) => {
+    const _path = `${file.root()}aws/resources/sns.yml`;
+
+    const path_exists = await file.path_exists(_path);
+    let read_resource = {
+        Resources: {}
+    };
+
+    if(path_exists) {
+        read_resource = await file.read_yaml(_path);
+    }
+    
+    const template = sns_topic_template(topic_name, dedup);
+    read_resource.Resources[`${topic_name}Topic`] = template;
+    // return file.write_yaml(_path, read_resource);
+    return read_resource;
+}
+
+const _addSubscription = async (topic_name, queue_name) => {
+    const _path = `${file.root()}aws/resources/sns.yml`;
+    const path_exists = await file.path_exists(_path);
+    let read_resource = {
+        Resources: {}
+    };
+    if(path_exists) {
+        read_resource = await file.read_yaml(_path);
+    }
+
+    const template = sns_subscription_template(topic_name, queue_name);
+    read_resource.Resources[`${topic_name}Subscription`] = template;
+    // return file.write_yaml(_path, read_resource);
+    return read_resource;
+}
+
+const sns_resource_handler = async (args) => {
+    const { is_subscription, topic_name, queue_name, dedup } = args;
+
+    if(is_subscription) {
+        return _addSubscription(topic_name, queue_name);
+    } else {
+        return _addTopic(topic_name, dedup);
+    }
+}
+
 
 const _createResource = async (args) => {
     let fn = null;
@@ -368,16 +413,16 @@ const _createResource = async (args) => {
             fn = apigateway_template;
             break;
         case 'dynamodb':
-            fn = dynamodb_handler;
+            fn = dynamodb_resource_handler;
             break;
         case 'rds-mysql':
-            fn = rds_mysql_handler;
+            fn = rds_mysql_resource_handler;
             break;
         case 'rds-postgres':
-            fn = rds_postgres_handler;
+            fn = rds_postgres_resource_handler;
             break;
         case 'security-group-rules':
-            fn = security_group_rules_handler;
+            fn = security_group_rules_resource_handler;
             break;
         case 'security-group':
             fn = security_group_template;
@@ -386,10 +431,13 @@ const _createResource = async (args) => {
             fn = vpc_rds_template;
             break;
         case 's3':
-            fn = s3_handler;
+            fn = s3_resource_handler;
             break;
         case 'sqs':
-            fn = sqs_handler;
+            fn = sqs_resource_handler;
+            break;
+        case 'sns':
+            fn = sns_resource_handler;
             break;
         default:
             throw new Error('invalid resource');
@@ -417,7 +465,7 @@ const _addResource = async (resource, args) => {
     return file.write_yaml(SERVERLESS_LOCATION, doc);
 }
 
-const available_services = [
+const available_iamroles = [
     'dynamodb',
     's3',
     'sns',
@@ -530,7 +578,7 @@ exports.addFunction = async (args) => {
  */
 exports.addIamRole = async (path, service, api_name, bucket_name) => {
     let add_to_aws_directory = false;
-    if (available_services.indexOf(service) > -1) add_to_aws_directory = true;
+    if (available_iamroles.indexOf(service) > -1) add_to_aws_directory = true;
     return _addIamRole(path, add_to_aws_directory, service, api_name, bucket_name);
 }
 /**
