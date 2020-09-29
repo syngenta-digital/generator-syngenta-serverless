@@ -42,6 +42,7 @@ const _addIamRoles = async (bucket_name) => {
 
 const _addResource = async (args) => {
     const resource = ['s3'];
+    console.log('hit _addResource')
     return serverless_helper.addResources(resource, args);
 }
 

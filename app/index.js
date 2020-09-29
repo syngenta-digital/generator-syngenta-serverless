@@ -2,8 +2,9 @@
 const Generator = require('yeoman-generator');
 // const yaml = require('js-yaml');
 // const fs = require('fs');
+const { default: init_serverless } = require('./states/init');
 const { default: menu } = require('./states/menu');
-const { default: s3Handler, handler: s3ResponseHandler } = require('./states/s3');
+const { default: s3Handler, handler: s3_response_handler } = require('./states/s3');
 const serverless = require('../helpers/serverless');
 const file = require('../helpers/file');
 
@@ -17,6 +18,7 @@ const STATE_ENUM = [
   'S3',
   'SNS',
   'SQS',
+  'EXIT',
   'COMPLETE'
 ]
 
@@ -27,16 +29,30 @@ const reset = () => {
 }
 
 const update_state = new_state => {
-  if(STATE_ENUM.indexOf(new_state) > -1) STATE = new_state;
+  if(STATE_ENUM.indexOf(new_state) > -1) {
+    STATE = new_state.toUpperCase();
+  }
+}
+
+const exit_response_handler = async () => {
+  return true;
+}
+
+const complete_response_handler = async () => {
+  return true;
 }
 
 const function_hash_map = new Map([
   ['INIT', menu],
   ['S3', s3Handler],
+  ['EXIT', exit_response_handler],
+  ['COMPLETE', complete_response_handler]
 ]);
 
 const answers_hash_map = new Map([
-  ['S3', s3ResponseHandler]
+  ['S3', s3_response_handler],
+  ['EXIT', exit_response_handler],
+  ['COMPLETE', complete_response_handler]
 ]);
 
 const validateServerlessFileExists = async args => {
@@ -76,48 +92,44 @@ module.exports = class extends Generator {
   constructor(args, opts) {
     super(args, opts);
     this.log('Initializing...');
-    this.generator = {
-      state: 'INIT'
-    }
   }
-
-
-
-  // get state() {
-  //   return this.state;
-  // }
-
-  // set state(_state) {
-  //   if(STATE_ENUM.indexOf(new_state) > -1) this.state = _state;
-  // }
 
   async start() {
     this.log('Do something...');
     await tempDirectoryConfig('test', `${this.destinationPath()}/`);
-    const answers = await menu(this);
-    console.log('logging answers', answers);
-    const services = answers.services.split(',');
-    for(const service of services) {
-      await validateServerlessFileExists(answers);
-      this.state = service;
-      const args = await function_hash_map.get(service.toUpperCase())(this);
-      await answers_hash_map.get(service.toUpperCase())(args);
-      update_state(service.toUpperCase());
+    const init = await init_serverless(this);
+    const loop = async () => {
+      const answers = await menu(this);
+      const services = answers.services.split(',');
+      for(const service of services) {
+        await validateServerlessFileExists(init);
+        this.state = service;
+        const args = await function_hash_map.get(service.toUpperCase())(this);
+        await answers_hash_map.get(service.toUpperCase())(args);
+        update_state(service.toUpperCase());
+      }
+
+      return true;
     }
 
+    while(STATE !== "EXIT" && STATE !== "COMPLETE") {
+      console.log('LOGGING STATE', STATE);
+      await loop();
+    }
 
-    // switch(STATE) {
-    //   {
-    //     case 'INIT':
-          
-    //   }
-    // }
-
-    // .then(async (answers) => {
-    //   logger.log('Starting Syngenta Serverless Generator...');
-    //   // await serverless.init(args);
-    //   console.log('logging answers', answers);
-    //   logger.log('finished!');
-    // });
+    if(STATE === "COMPLETE") {
+      console.log('Serverless Generator complete!');
+    } else {
+      console.log('exiting and deleting resources.');
+      await file.delete_file(`${file.root(true)}serverless.yml`);
+      await file.delete_file(`${file.root(true)}package.json`);
+      await file.delete_file(`${file.root(true)}.nvmrc`);
+      await file.delete_file(`${file.root(true)}.npmrc`);
+      await file.force_delete_directory(`${file.root(true)}aws`);
+      await file.force_delete_directory(`${file.root(true)}application`);
+      await file.force_delete_directory(`${file.root(true)}db_versions`);
+      await file.force_delete_directory(`${file.root(true)}.circleci`);
+      await file.force_delete_directory(`${file.root(true)}.github`);
+    }
   }
 };

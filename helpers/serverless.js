@@ -372,6 +372,7 @@ const security_group_rules_resource_handler = async () => {
 }
 
 const s3_resource_handler = async (args) => {
+    console.log('logging file.root(true)', file.root(true));
     const _path = `${file.root(true)}aws/resources/s3.yml`;
 
     const path_exists = await file.path_exists(_path);
@@ -457,6 +458,7 @@ const sns_resource_handler = async (args) => {
 
 const _createResource = async (args) => {
     let fn = null;
+    console.log('hit _create rsource', args.resource)
     switch(args.resource) {
         case 'apigateway':
             fn = apigateway_template;
@@ -510,6 +512,7 @@ const _addResource = async (resource, args) => {
     const _resource = `\${file(./aws/resources/${resource}.yml}`;
     const found = doc.resources.find(x => x === _resource);
     if(!black_list_resources_from_serverless_file.includes(resource) && !found) doc.resources.push(_resource);
+    console.log('hit _addResource in serverless')
     await _createResource({ resource, ...args });
     return file.write_yaml(`${file.root(true)}serverless.yml`, doc);
 }
