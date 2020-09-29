@@ -26,7 +26,7 @@ const _initServerless = (app, service) => {
         const _path = `${file.root(true)}serverless.yml`;
         const exists = await file.path_exists(_path);
         let doc = null;
-        if(!_path) {
+        if(!exists) {
             doc = await file.read_yaml(`${file.root()}templates/serverless/serverless.yml`);
         } else {
             doc = await file.read_yaml(_path);
@@ -37,8 +37,8 @@ const _initServerless = (app, service) => {
         doc.app = app;
         doc.service = service;
         await _addBaseFiles();
-        await _createRouterFunction();
         await packagejson_helper.create(`api-node-${app}-${service}`);
+        await _createRouterFunction();
         // TODO: i think this will need to be changed if this is going to be a package
         resolve(file.write_yaml(`${file.root(true)}serverless.yml`, doc));
     })

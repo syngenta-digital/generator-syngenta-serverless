@@ -50,10 +50,8 @@ const validateServerlessFileExists = async args => {
 }
 
 const tempDirectoryConfig = async (app, root) => {
-  const _path = `${file.root()}/${root_temp_directory}`;
-  console.log('logging _path', _path);
+  const _path = `${file.root()}${root_temp_directory}`;
   const exists = await file.path_exists(_path);
-  console.log('logging exists', exists);
   if(!exists) {
     await file.create_directory(_path);
   }
@@ -71,7 +69,7 @@ const tempDirectoryConfig = async (app, root) => {
     root
   }
 
-  await file.write_yaml(`${file.root(true)}/${root_temp_directory}/config.yml`, config);
+  await file.write_yaml(`${file.root()}${root_temp_directory}/config.yml`, config);
 }
 
 module.exports = class extends Generator {

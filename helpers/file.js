@@ -117,7 +117,6 @@ const _get_root_project_directory = (is_target_root) => {
                     root_path = read_resource.root;
                 }
             }
-            console.log('logging root_path', root_path);
         } catch(e) {
             // dont need to do anything here
         }
