@@ -7,7 +7,7 @@
         "lint": "eslint application/**",
         "sct": "sct",
         "report": "nyc report",
-        "test": "unittest=true nyc mocha --recursive"
+        "test": "SYNGENTA_SERVERLESS_DEBUG=true unittest=true nyc mocha --recursive"
     },
     "author": "",
     "license": "ISC",

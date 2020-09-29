@@ -94,15 +94,7 @@ module.exports = class extends Generator {
   async start() {
     this.log('Do something...');
     await tempDirectoryConfig('test', `${this.destinationPath()}/`);
-    // write our own temp directory and file to hold some values we need
-
     const answers = await menu(this);
-    // switch(STATE) {
-    //   {
-    //     case 'INIT':
-          
-    //   }
-    // }
     console.log('logging answers', answers);
     const services = answers.services.split(',');
     for(const service of services) {
@@ -112,6 +104,15 @@ module.exports = class extends Generator {
       await answers_hash_map.get(service.toUpperCase())(args);
       update_state(service.toUpperCase());
     }
+
+
+    // switch(STATE) {
+    //   {
+    //     case 'INIT':
+          
+    //   }
+    // }
+
     // .then(async (answers) => {
     //   logger.log('Starting Syngenta Serverless Generator...');
     //   // await serverless.init(args);
