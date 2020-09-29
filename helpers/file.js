@@ -5,6 +5,7 @@ const { resolve } = require('path');
 const path = require('path');
 const rimraf = require("rimraf");
 const logger = require('./logger');
+const config = require('./config');
 
 const _read_file = (path, do_not_parse_json) => {
     return new Promise((resolve) => {
@@ -71,16 +72,64 @@ const _write_yaml = (target_path, json) => {
             resolve(true);
         });
     })
+    // return new Promise(async resolve => {
+    //     let root_path = `${path.join(__dirname, '..')}/`;
+    //     const config_path = `${root_path}syngenta-generator-temp/config.yml`;
+    //     console.log('logging config_path', config_path);
+    //     // const exists = fs.access(config_path);
+    //     fs.access(path, (err) => {
+    //         if (!err) {
+    //             const read_resource = yaml.safeLoad(fs.readFileSync(config_path, 'utf8'));
+    //             console.log('logging read_resource', read_resource);
+    //             if(read_resource.root) {
+    //                 root_path = read_resource.root;
+    //             }
+    //         }
+
+    //         const read_resource = yaml.safeLoad(fs.readFileSync(config_path, 'utf8'));
+    //         console.log('logging read_resource', read_resource);
+    //         if(read_resource.root) {
+    //             root_path = read_resource.root;
+    //         }
+    //         console.log('logging root_path', root_path);
+    //         // fs.writeFile(`${root_path}/${target_path}`, yaml.safeDump(json), (err) => {
+    //         fs.writeFile(target_path, yaml.safeDump(json), (err) => {
+    //             if (err) {
+    //                 logger.warn(err);
+    //                 resolve(false);
+    //             }
+        
+    //             resolve(true);
+    //         });
+    //     });
+    // })
 }
 
-const _get_root_project_directory = () => {
-    return `${path.join(__dirname, '..')}/`
+const _get_root_project_directory = (is_target_root) => {
+    let root_path = `${path.join(__dirname, '..')}/`;
+    if(is_target_root && !config.DEBUG) {
+        const config_path = `${root_path}syngenta-generator-temp/config.yml`;
+        try {
+            const exists = fs.existsSync(config_path);
+            if(exists) {
+                const read_resource = yaml.safeLoad(fs.readFileSync(config_path, 'utf8'));
+                if(read_resource.root) {
+                    root_path = read_resource.root;
+                }
+            }
+            console.log('logging root_path', root_path);
+        } catch(e) {
+            // dont need to do anything here
+        }
+    }
+
+    return root_path;
 }
 
-exports.doesLocalDirectoriesExist = async (directories) => {
+exports.doesLocalDirectoriesExist = async (directories, is_target_root = true) => {
     for (const dir of directories) {
         const does_exist = await _path_exists(dir);
-        if (!does_exist) await _create_directory(`${_get_root_project_directory()}${dir}`);
+        if (!does_exist) await _create_directory(`${_get_root_project_directory(is_target_root)}${dir}`);
     }
 
     return true;
@@ -150,6 +199,6 @@ exports.path_exists = async (path) => {
     return _path_exists(path);
 }
 
-exports.root = () => {
-    return _get_root_project_directory();
+exports.root = (is_target_root) => {
+    return _get_root_project_directory(is_target_root);
 }

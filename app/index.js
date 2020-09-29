@@ -4,9 +4,10 @@ const Generator = require('yeoman-generator');
 // const fs = require('fs');
 const { default: menu } = require('./states/menu');
 const { default: s3Handler, handler: s3ResponseHandler } = require('./states/s3');
-
 const serverless = require('../helpers/serverless');
 const file = require('../helpers/file');
+
+const root_temp_directory = 'syngenta-generator-temp';
 const STATE_ENUM = [
   'INIT',
   'APIGATEWAY',
@@ -19,8 +20,14 @@ const STATE_ENUM = [
   'COMPLETE'
 ]
 
+let STATE = 'INIT';
+
+const reset = () => {
+  update_state('INIT');
+}
+
 const update_state = new_state => {
-  
+  if(STATE_ENUM.indexOf(new_state) > -1) STATE = new_state;
 }
 
 const function_hash_map = new Map([
@@ -33,13 +40,38 @@ const answers_hash_map = new Map([
 ]);
 
 const validateServerlessFileExists = async args => {
-  const _path = `${file.root()}serverless.yml`;
+  const _path = `${file.root(true)}serverless.yml`;
   const exists = await file.path_exists(_path);
   if(!exists) {
     await serverless.init(args.app, args.service);
   }
 
   return true;
+}
+
+const tempDirectoryConfig = async (app, root) => {
+  const _path = `${file.root()}/${root_temp_directory}`;
+  console.log('logging _path', _path);
+  const exists = await file.path_exists(_path);
+  console.log('logging exists', exists);
+  if(!exists) {
+    await file.create_directory(_path);
+  }
+
+  const config_path = `${_path}/config.yml`;
+  const config_exists = await file.path_exists(config_path);
+  let config = null;
+  if(!config_exists) {
+      config = {};
+  } else {
+      config = await file.read_yaml(config_path);
+  }
+
+  config = {
+    root
+  }
+
+  await file.write_yaml(`${file.root(true)}/${root_temp_directory}/config.yml`, config);
 }
 
 module.exports = class extends Generator {
@@ -63,6 +95,9 @@ module.exports = class extends Generator {
 
   async start() {
     this.log('Do something...');
+    await tempDirectoryConfig('test', `${this.destinationPath()}/`);
+    // write our own temp directory and file to hold some values we need
+
     const answers = await menu(this);
     // switch(STATE) {
     //   {
@@ -77,6 +112,7 @@ module.exports = class extends Generator {
       this.state = service;
       const args = await function_hash_map.get(service.toUpperCase())(this);
       await answers_hash_map.get(service.toUpperCase())(args);
+      update_state(service.toUpperCase());
     }
     // .then(async (answers) => {
     //   logger.log('Starting Syngenta Serverless Generator...');

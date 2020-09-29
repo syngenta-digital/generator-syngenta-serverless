@@ -24,7 +24,7 @@ const _addIamRoles = async () => {
 }
 
 const _addTopic = async (topic_name, dedup = false) => {
-    const _path = `${file.root()}aws/resources/sns.yml`;
+    const _path = `${file.root(true)}aws/resources/sns.yml`;
 
     const path_exists = await file.path_exists(_path);
     let read_resource = {
@@ -41,7 +41,7 @@ const _addTopic = async (topic_name, dedup = false) => {
 }
 
 const _addSubscription = async (topic_name, queue_name) => {
-    const _path = `${file.root()}aws/resources/sns.yml`;
+    const _path = `${file.root(true)}aws/resources/sns.yml`;
     const path_exists = await file.path_exists(_path);
     let read_resource = {
         Resources: {}
@@ -57,7 +57,7 @@ const _addSubscription = async (topic_name, queue_name) => {
 
 // TODO: this needs to be moved to serverless, but want to think it over so doing this here for now.
 const _addToServerless = async () => {
-    const doc = await file.read_yaml(`${file.root()}serverless.yml`);
+    const doc = await file.read_yaml(`${file.root(true)}serverless.yml`);
     if(!doc.resources) {
         doc.resources = [];
     }
@@ -65,7 +65,7 @@ const _addToServerless = async () => {
     const does_exist = doc.resources.find(x => x === resource);
     if(!does_exist) {
         doc.resources.push(resource);
-        await file.write_yaml(`${file.root()}serverless.yml`, doc);
+        await file.write_yaml(`${file.root(true)}serverless.yml`, doc);
     }
 
     return true;

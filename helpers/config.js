@@ -1,1 +1,1 @@
-exports.DEBUG = true;
+exports.DEBUG = process.env ? (process.env.SYNGENTA_SERVERLESS_DEBUG || false ) : false;

@@ -1,6 +1,6 @@
 const file = require('../../../helpers/file');
 
-const template = (versions_path = `${file.root()}db_versions`) => `// this has been taken from a shared package and edited for this app
+const template = (versions_path = `${file.root(true)}db_versions`) => `// this has been taken from a shared package and edited for this app
 // original package (syngenta-mysql-versioner): https://github.com/syngenta-dpe-usco/package-node-mysql-versioner
 const versioner = require('./helpers/mysql-versioner');
 

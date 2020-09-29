@@ -11,7 +11,7 @@ const { default: neo4j } = require('../templates/aws/local/neo4j');
 const { addPackage, addScript, create: create_package_json } = require('./package-json');
 
 const _addLocalNeo4j = async () => {
-    const _path = `${file.root()}aws/local/neo4j.yml`;
+    const _path = `${file.root(true)}aws/local/neo4j.yml`;
     const directories = [
         'aws',
         'aws/local'
@@ -43,7 +43,7 @@ const _addEnvironmentVariables = async () => {
         'aws/envs'
     ]
     await file.doesLocalDirectoriesExist(directories);
-    const _path = `${file.root()}aws/envs/local.yml`;
+    const _path = `${file.root(true)}aws/envs/local.yml`;
     const local_env_exists = await file.path_exists(_path);
     if(!local_env_exists) {
         // const 
@@ -68,12 +68,12 @@ const _createVersionerFunction = async () => {
     ]
     await file.doesLocalDirectoriesExist(directories);
     const formatted = formatter.format(versioner_template);
-    return file.write_file(`${file.root()}application/v1/controller/console/database-versioner.js`, formatted)
+    return file.write_file(`${file.root(true)}application/v1/controller/console/database-versioner.js`, formatted)
 }
 
 const _addNeo4jDatabaseVersioner = async () => {
-    if(!await file.path_exists(`${file.root()}db_versions`)) {
-        await file.create_directory(`${file.root()}db_versions`);
+    if(!await file.path_exists(`${file.root(true)}db_versions`)) {
+        await file.create_directory(`${file.root(true)}db_versions`);
     }
     const packages = [
         {

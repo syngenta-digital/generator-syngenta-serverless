@@ -49,28 +49,28 @@ const _addEnvironmentVariables = async (db_name) => {
         'aws/envs'
     ]
     await file.doesLocalDirectoriesExist(directories);
-    const local_env_path = `${file.root()}aws/envs/local.yml`;
+    const local_env_path = `${file.root(true)}aws/envs/local.yml`;
     const local_env_exists = await file.path_exists(local_env_path);
     if(!local_env_exists) {
         // const 
-        await file.write_yaml(local_env_path, local_env_template);
+        await file.write_yaml(`${file.root(true)}aws/envs/local.yml`, local_env_template);
     }
     const local_env = await file.read_yaml(local_env_path);
     local_env.environment[`DYNAMO_${db_name.replace(/-/g, '_').toUpperCase()}`] = `\${self:provider.stackTags.name}-${db_name}`;
     
     await file.write_yaml(local_env_path, local_env);
 
-    const cloud_env_path = `${file.root()}aws/envs/cloud.yml`;
+    const cloud_env_path = `${file.root(true)}aws/envs/cloud.yml`;
     const cloud_env_exists = await file.path_exists(cloud_env_path);
 
     if(!cloud_env_exists) {
         // const 
-        await file.write_yaml(cloud_env_path, local_env_template);
+        await file.write_yaml(`${file.root(true)}aws/envs/cloud.yml`, local_env_template);
     }
 
     const cloud_env = await file.read_yaml(cloud_env_path);
     cloud_env.environment[`DYNAMO_${db_name.replace(/-/g, '_').toUpperCase()}`] = `\${self:provider.stackTags.name}-${db_name}`;
-    return file.write_yaml(cloud_env_path, cloud_env);
+    return file.write_yaml(`${file.root(true)}aws/envs/cloud.yml`, cloud_env);
 }
 
 const _addDynamoDBResources = async (db_name) => {

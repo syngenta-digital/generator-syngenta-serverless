@@ -11,7 +11,7 @@ const _isPlainObject = (input) => {
  */
 exports.addPackage = async (packages) => {
     const _path = config.DEBUG ? 'package2.json' : 'package.json';
-    const package_json = await file.read_file(`${file.root()}${_path}`);
+    const package_json = await file.read_file(`${file.root(true)}${_path}`);
     let _packages = [];
 
     if(_isPlainObject(packages)) {
@@ -32,7 +32,7 @@ exports.addPackage = async (packages) => {
     }
 
 
-    return file.write_file(`${file.root()}${_path}`, JSON.stringify(package_json, null, 4));
+    return file.write_file(`${file.root(true)}${_path}`, JSON.stringify(package_json, null, 4));
 }
 /**
  * 
@@ -40,7 +40,7 @@ exports.addPackage = async (packages) => {
  */
 exports.addScript = async (scripts) => {
     const _path = config.DEBUG ? 'package2.json' : 'package.json';
-    const package_json = await file.read_file(`${file.root()}${_path}`);
+    const package_json = await file.read_file(`${file.root(true)}${_path}`);
     let _scripts = [];
 
     if(_isPlainObject(scripts)) {
@@ -58,18 +58,18 @@ exports.addScript = async (scripts) => {
         }
     }
 
-    return file.write_file(`${file.root()}${_path}`, JSON.stringify(package_json, null, 4));
+    return file.write_file(`${file.root(true)}${_path}`, JSON.stringify(package_json, null, 4));
 }
 /**
  * will create a package.json file
  */
 exports.create = async (project_name) => {
     const _path = config.DEBUG ? 'package2.json' : 'package.json';
-
-    let package_json = await file.read_file(`${file.root()}${_path}`);
-    if(!package_json) {
-        package_json = package_json_template.packagejson(project_name);
-        await file.write_file(`${file.root()}${_path}`, JSON.stringify(package_json, null, 4));
+    console.log('logging package json path', _path);
+    const package_json_path_exists = await file.path_exists(`${file.root(true)}${_path}`);
+    if(!package_json_path_exists) {
+        const package_json = package_json_template.packagejson(project_name);
+        await file.write_file(`${file.root(true)}${_path}`, JSON.stringify(package_json, null, 4));
     }
 
     return true;
@@ -79,7 +79,7 @@ exports.create = async (project_name) => {
  */
 exports.read_me = async () => {
     const _path = config.DEBUG ? 'package2.json' : 'package.json';
-    return file.read_file(`${file.root()}${_path}`)
+    return file.read_file(`${file.root(true)}${_path}`)
 }
 /**
  * Will delete the package2.json folder (only works in debug mode)
