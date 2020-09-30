@@ -194,7 +194,6 @@ const _s3IamRoleHandler = async (bucket_name) => {
     const path_exists = await file.path_exists(_path);
 
     if(!path_exists) {
-        console.log('path doesnt exist, creating now')
         return file.write_yaml(`${file.root(true)}aws/iamroles/s3.yml`, s3Template(bucket_name));
     }
 
@@ -571,9 +570,12 @@ const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucke
     if (!iamRoleStatements) {
         doc.provider.iamRoleStatements = [];
     }
-    if(doc.provider.iamRoleStatements.indexOf(iamrole) === -1 && service !== 'apigateway') {
-        doc.provider.iamRoleStatements.push(iamrole);
-        await file.write_yaml(`${file.root(true)}serverless.yml`, doc);
+    // if(doc.provider.iamRoleStatements.indexOf(iamrole) === -1 && service !== 'apigateway') {
+    if(service !== 'apigateway') {
+        if(doc.provider.iamRoleStatements.indexOf(iamrole) === -1) {
+            doc.provider.iamRoleStatements.push(iamrole);
+            await file.write_yaml(`${file.root(true)}serverless.yml`, doc);
+        }
         
 
         if (add_to_aws_directory) {
