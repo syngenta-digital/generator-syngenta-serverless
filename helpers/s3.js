@@ -48,7 +48,7 @@ const _addResource = async (args) => {
 exports.init = async args => {
     const { bucket_name } = args;
     await _environmentVariables(bucket_name);
-    await _addServerlessVariables();
+    // await _addServerlessVariables();
     await _addIamRoles(bucket_name);
     await _addResource(args);
     return true;

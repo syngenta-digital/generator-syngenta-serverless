@@ -57,14 +57,6 @@ const _addSubscription = async (args) => {
     })
 }
 
-const sub_menu_handler = async args => {
-    if(args.sns && args.sns.toLowerCase() === "topic") {
-        // return _addTopic(args);
-    } else if (args.sns && args.sns.toLowerCase() === "subscription") {
-        // return _addSubscription(args);
-    }
-}
-
 exports.handler = async _this => {
     const init_response = await _init(_this);
     if(init_response.topic_or_sub.toLowerCase() === "subscription") {

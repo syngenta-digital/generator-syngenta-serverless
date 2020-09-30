@@ -637,7 +637,7 @@ exports.addIamRole = async (path, service, api_name, bucket_name) => {
  * @param {data} data data is a key/value object that simply contains a key and a value to add to the custom serverless variables.
  */
 exports.addCustom = async (data) => {
-    const doc = yaml.safeLoad(fs.readFileSync(`${file.root()}serverless.yml`, 'utf8'));
+    const doc = await file.read_yaml(`${file.root(true)}serverless.yml`);
     doc.custom[data.key] = data.value;
     await file.write_yaml(`${file.root(true)}serverless.yml`, doc);
 }
