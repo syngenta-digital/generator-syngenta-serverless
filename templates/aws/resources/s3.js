@@ -1,3 +1,5 @@
+const { validResourceName } = require('../../../helpers/string');
+
 exports.bucket = (bucket_name) => {
     return  {
         Type: 'AWS::S3::Bucket',
@@ -20,7 +22,7 @@ exports.public_policy = (bucket_name) => {
         // [`AttachmentsBucketAllowPublicReadPolicy${bucket_name}`]: {
             Type: 'AWS::S3::BucketPolicy',
             Properties: {
-                Bucket: `!Ref ${bucket_name}Storage`,
+                Bucket: `!Ref ${validResourceName(bucket_name)}Storage`,
                 PolicyDocument: {
                     Version: "2012-10-17",
                     Statement: [

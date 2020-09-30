@@ -1,6 +1,8 @@
+const { validResourceName } = require('../../../helpers/string');
+
 exports.default = (queue_name, isFifo = false, includeDLQ = false, timeout = 30, maxRedriveReceiveCount = 5) => {
     const template = {
-        [`${queue_name}Queue`]: {
+        [`${validResourceName(queue_name)}Queue`]: {
             Type: 'AWS::SQS::Queue',
             Properties: {
               QueueName: `\${self:provider.stackTags.name}-${queue_name}-sqs`,
@@ -8,12 +10,12 @@ exports.default = (queue_name, isFifo = false, includeDLQ = false, timeout = 30,
               VisibilityTimeout: timeout
             }
         },
-        [`${queue_name}QueuePolicy`]:  {
+        [`${validResourceName(queue_name)}QueuePolicy`]:  {
             "Type": "AWS::SQS::QueuePolicy",
             "Properties": {
                 "Queues": [
                     {
-                        "Ref": `${queue_name}Queue`
+                        "Ref": `${validResourceName(queue_name)}Queue`
                     }
                 ],
                 "PolicyDocument": {
@@ -33,7 +35,7 @@ exports.default = (queue_name, isFifo = false, includeDLQ = false, timeout = 30,
                         ],
                         "Resource": {
                             "Fn::GetAtt": [
-                                `${queue_name}Queue`,
+                                `${validResourceName(queue_name)}Queue`,
                                 "Arn"
                             ]
                         }
@@ -45,14 +47,14 @@ exports.default = (queue_name, isFifo = false, includeDLQ = false, timeout = 30,
     }
 
     if(includeDLQ) {
-        template[`${queue_name}Queue`].Properties.RedrivePolicy = {
+        template[`${validResourceName(queue_name)}Queue`].Properties.RedrivePolicy = {
             deadLetterTargetArn: {
-                'Fn::GetAtt': [ `${queue_name}QueueDLQ`, 'Arn' ],
+                'Fn::GetAtt': [ `${validResourceName(queue_name)}QueueDLQ`, 'Arn' ],
                 maxReceiveCount: maxRedriveReceiveCount
             }
         }
 
-        template[`${queue_name}QueueDLQ`] = {
+        template[`${validResourceName(queue_name)}QueueDLQ`] = {
             Type: 'AWS::SQS::Queue',
             Properties: {
               QueueName: `\${self:provider.stackTags.name}-${queue_name}-sqs-dlq`,

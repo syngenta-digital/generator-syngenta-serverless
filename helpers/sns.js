@@ -71,38 +71,6 @@ const _addIamRoles = async () => {
     return addIamRole('./aws/iamroles/sns.yml', 'sns');
 }
 
-const _addTopic = async (topic_name, dedup = false) => {
-    const _path = `${file.root(true)}aws/resources/sns.yml`;
-
-    const path_exists = await file.path_exists(_path);
-    let read_resource = {
-        Resources: {}
-    };
-
-    if(path_exists) {
-        read_resource = await file.read_yaml(_path);
-    }
-    
-    const template = sns_topic_template(topic_name, dedup);
-    read_resource.Resources[`${topic_name}Topic`] = template;
-    return file.write_yaml(_path, read_resource);
-}
-
-const _addSubscription = async (topic_name, queue_name) => {
-    const _path = `${file.root(true)}aws/resources/sns.yml`;
-    const path_exists = await file.path_exists(_path);
-    let read_resource = {
-        Resources: {}
-    };
-    if(path_exists) {
-        read_resource = await file.read_yaml(_path);
-    }
-
-    const template = sns_subscription_template(topic_name, queue_name);
-    read_resource.Resources[`${topic_name}Subscription`] = template;
-    return file.write_yaml(_path, read_resource);
-}
-
 // TODO: this needs to be moved to serverless, but want to think it over so doing this here for now.
 const _addToServerless = async () => {
     const doc = await file.read_yaml(`${file.root(true)}serverless.yml`);

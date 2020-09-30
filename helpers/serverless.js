@@ -4,6 +4,7 @@ const yaml = require('js-yaml');
 const path = require('path');
 const file = require('./file');
 const formatter = require('esformatter');
+const { validResourceName } = require('./string');
 const packagejson_helper  = require('../helpers/package-json');
 const {default: router_template}  = require('../templates/controller/apigateway/router');
 const {default: apigateway_template}  = require('../templates/aws/resources/apigateway');
@@ -421,7 +422,7 @@ const _addTopic = async (topic_name, dedup = false) => {
     }
     
     const template = sns_topic_template(topic_name, dedup);
-    read_resource.Resources[`${topic_name}Topic`] = template;
+    read_resource.Resources[`${validResourceName(topic_name)}Topic`] = template;
     // return file.write_yaml(_path, read_resource);
     return read_resource;
 }
@@ -437,7 +438,7 @@ const _addSubscription = async (topic_name, queue_name) => {
     }
 
     const template = sns_subscription_template(topic_name, queue_name);
-    read_resource.Resources[`${topic_name}Subscription`] = template;
+    read_resource.Resources[`${validResourceName(topic_name)}Subscription`] = template;
     // return file.write_yaml(_path, read_resource);
     return read_resource;
 }

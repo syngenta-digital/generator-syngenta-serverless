@@ -1,3 +1,6 @@
+const { validResourceName } = require('../../../helpers/string');
+
+
 exports.topic = (topic_name, dedup = false) => {
     const template = {
         ContentBasedDeduplication: dedup,
@@ -16,7 +19,7 @@ exports.subscription = (topic_name, sqs_queue_name) => {
            Protocol: "sqs",
            Endpoint: {
               'Fn::GetAtt': [
-                 `${sqs_queue_name}Queue`,
+                 `${validResourceName(sqs_queue_name)}Queue`,
                  "Arn"
               ]
            },
