@@ -76,7 +76,6 @@ const _addBaseFiles = async () => {
         if(template.dir) {
             await file.copy_directory(`${file.root()}templates/basic/${template.src}`, _path);
         } else {
-            console.log(`${file.root()}templates/basic/${template.src}`, _path)
             await file.copy_directory(`${file.root()}templates/basic/${template.src}`, _path);
         }
     }
@@ -372,7 +371,6 @@ const security_group_rules_resource_handler = async () => {
 }
 
 const s3_resource_handler = async (args) => {
-    console.log('logging file.root(true)', file.root(true));
     const _path = `${file.root(true)}aws/resources/s3.yml`;
 
     const path_exists = await file.path_exists(_path);
@@ -512,7 +510,6 @@ const _addResource = async (resource, args) => {
     const _resource = `\${file(./aws/resources/${resource}.yml}`;
     const found = doc.resources.find(x => x === _resource);
     if(!black_list_resources_from_serverless_file.includes(resource) && !found) doc.resources.push(_resource);
-    console.log('hit _addResource in serverless')
     await _createResource({ resource, ...args });
     return file.write_yaml(`${file.root(true)}serverless.yml`, doc);
 }

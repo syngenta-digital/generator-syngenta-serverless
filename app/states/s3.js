@@ -20,11 +20,8 @@ const _addBucket = async (args) => {
         bucket_name: args.bucket_name,
         isPublic: args.is_public
     })
-
-    console.log('logging AddBucket')
 }
 
 exports.handler = async args => {
-  console.log('hit handler')
   return _addBucket(args);
 }

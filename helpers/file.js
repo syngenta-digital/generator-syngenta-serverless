@@ -114,7 +114,6 @@ const _get_root_project_directory = (is_target_root) => {
             if(exists) {
                 const read_resource = yaml.safeLoad(fs.readFileSync(config_path, 'utf8'));
                 if(read_resource.root) {
-                    console.log('logging root', read_resource.root);
                     root_path = read_resource.root;
                 }
             }

@@ -65,7 +65,6 @@ exports.addScript = async (scripts) => {
  */
 exports.create = async (project_name) => {
     const _path = config.DEBUG ? 'package2.json' : 'package.json';
-    console.log('logging package json path', _path);
     const package_json_path_exists = await file.path_exists(`${file.root(true)}${_path}`);
     if(!package_json_path_exists) {
         const package_json = package_json_template.packagejson(project_name);

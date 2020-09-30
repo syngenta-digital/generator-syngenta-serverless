@@ -4,6 +4,7 @@ const Generator = require('yeoman-generator');
 // const fs = require('fs');
 const { default: init_serverless } = require('./states/init');
 const { default: menu } = require('./states/menu');
+const { default: add_service } = require('./states/add-service');
 const { default: s3Handler, handler: s3_response_handler } = require('./states/s3');
 const serverless = require('../helpers/serverless');
 const file = require('../helpers/file');
@@ -11,6 +12,7 @@ const file = require('../helpers/file');
 const root_temp_directory = 'syngenta-generator-temp';
 const STATE_ENUM = [
   'INIT',
+  'ADD-SERVICE',
   'APIGATEWAY',
   'RDS-MYSQL',
   'RDS-POSTGRES',
@@ -35,25 +37,16 @@ const update_state = new_state => {
 }
 
 const exit_response_handler = async () => {
-  return true;
+  return {
+    services: 'EXIT'
+  };
 }
 
 const complete_response_handler = async () => {
-  return true;
+  return {
+    services: 'COMPLETE'
+  };;
 }
-
-const function_hash_map = new Map([
-  ['INIT', menu],
-  ['S3', s3Handler],
-  ['EXIT', exit_response_handler],
-  ['COMPLETE', complete_response_handler]
-]);
-
-const answers_hash_map = new Map([
-  ['S3', s3_response_handler],
-  ['EXIT', exit_response_handler],
-  ['COMPLETE', complete_response_handler]
-]);
 
 const validateServerlessFileExists = async args => {
   const _path = `${file.root(true)}serverless.yml`;
@@ -88,6 +81,32 @@ const tempDirectoryConfig = async (app, root) => {
   await file.write_yaml(`${file.root()}${root_temp_directory}/config.yml`, config);
 }
 
+const convert_menu_answer = {
+  '1': 'add-service',
+  '2': 'complete',
+  '3': 'exit'
+}
+
+const function_hash_map = new Map([
+  ['INIT', menu],
+  ['ADD-SERVICE', add_service],
+  ['S3', s3Handler],
+  ['EXIT', exit_response_handler],
+  ['COMPLETE', complete_response_handler]
+]);
+
+const answers_hash_map = new Map([
+  ['S3', s3_response_handler],
+  ['EXIT', exit_response_handler],
+  ['COMPLETE', complete_response_handler]
+]);
+
+const menu_hash_mapper = new Map([
+  ['add-service', 'ADD-SERVICE'],
+  ['complete', 'COMPLETE'],
+  ['exit', 'EXIT'],
+])
+
 module.exports = class extends Generator {
   constructor(args, opts) {
     super(args, opts);
@@ -99,7 +118,11 @@ module.exports = class extends Generator {
     await tempDirectoryConfig('test', `${this.destinationPath()}/`);
     const init = await init_serverless(this);
     const loop = async () => {
-      const answers = await menu(this);
+      const menu_answer = await menu(this);
+      const new_state = menu_hash_mapper.get(convert_menu_answer[menu_answer.menu]);
+      update_state(new_state.toUpperCase());
+
+      const answers = await function_hash_map.get(new_state.toUpperCase())(this);
       const services = answers.services.split(',');
       for(const service of services) {
         await validateServerlessFileExists(init);
@@ -113,7 +136,6 @@ module.exports = class extends Generator {
     }
 
     while(STATE !== "EXIT" && STATE !== "COMPLETE") {
-      console.log('LOGGING STATE', STATE);
       await loop();
     }
 
