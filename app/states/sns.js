@@ -91,12 +91,12 @@ const _subscription_handler = async _this => {
             {
                 type    : 'input',
                 name    : 'topic_name',
-                message : `Please select the following Topic you want to select for your subscription (enter the corresponding number)\n\n${available_topics.map((q, i) => `${i + 1}) ${validResourceName(q.name)}\n`)}\n\n`
+                message : `\n\n>>>>> Please select the following Topic you want to select for your subscription (enter the corresponding number)\n\n${available_topics.map((q, i) => `${i + 1}) ${validResourceName(q.name)}\n`)}\n\n`
             },
             {
                 type    : 'input',
                 name    : 'queue_name',
-                message : `Please select the following Queue you want to use as a trigger (enter the corresponding number)\n\n${available_queues.map((q, i) => `${i + 1}) ${validResourceName(q.name)}\n`)}\n\n`
+                message : `\n\n>>>>> Please select the following Queue you want to use as a stream (enter the corresponding number)\n\n${available_queues.map((q, i) => `${i + 1}) ${validResourceName(q.name)}\n`)}\n\n`
             }
         ])
     } else if(!sqs_exists) {
@@ -137,9 +137,12 @@ exports.handler = async _this => {
     const init_response = await _init(_this);
     if(init_response.topic_or_sub.toLowerCase() === "subscription") {
         const subscription_response = await _subscription_handler(_this);
-        console.log('logging subscription_response', subscription_response);
-        // return _addSubscription(subscription_response); 
-        return true;    
+        const available_queues = await _available_queues();
+        const available_topics = await _available_topics();
+        const { topic_name, queue_name } = subscription_response;
+        const find_queue = available_queues.find((x, i) => (i + 1) == queue_name);
+        const find_topic = available_topics.find((x, i) => (i + 1) == topic_name);
+        return _addSubscription({ queue_name: find_queue.name.split('Queue')[0], topic_name: find_topic.name.split('Topic')[0]});
     } else if (init_response.topic_or_sub.toLowerCase() === "topic") {
         const topic_response = await _topic_handler(_this);
         if(!topic_response.failed) {
