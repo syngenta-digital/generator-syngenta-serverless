@@ -16,9 +16,14 @@ const _environmentVariables = async () => {
         await file.write_yaml(local_env_path, local_env_template);
     }
     const local_env = await file.read_yaml(local_env_path);
-    local_env.policies = {
-        sns: '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}'
+    if(local_env.policies) {
+        local_env.policies.sns = '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}';
+    } else {
+        local_env.policies = {
+            sns: '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}'
+        }
     }
+
     
     await file.write_yaml(local_env_path, local_env);
 
@@ -30,8 +35,12 @@ const _environmentVariables = async () => {
     }
 
     const cloud_env = await file.read_yaml(cloud_env_path);
-    cloud_env.policies = {
-        sns: '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}'
+    if(cloud_env.policies) {
+        cloud_env.policies.sns = '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}';
+    } else {
+        cloud_env.policies = {
+            sns: '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}'
+        }
     }
     return file.write_yaml(cloud_env_path, cloud_env);
 }

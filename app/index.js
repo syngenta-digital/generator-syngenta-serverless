@@ -7,6 +7,7 @@ const { default: menu } = require('./states/menu');
 const { default: add_service } = require('./states/add-service');
 const { handler: s3_response_handler } = require('./states/s3');
 const { handler: sns_response_handler } = require('./states/sns');
+const { handler: sqs_response_handler } = require('./states/sqs');
 
 const serverless = require('../helpers/serverless');
 const file = require('../helpers/file');
@@ -92,8 +93,6 @@ const convert_menu_answer = {
 const function_hash_map = new Map([
   ['INIT', menu],
   ['ADD-SERVICE', add_service],
-//   ['S3', s3_handler],
-//   ['SNS', sns_handler],
   ['EXIT', exit_response_handler],
   ['COMPLETE', complete_response_handler]
 ]);
@@ -101,6 +100,7 @@ const function_hash_map = new Map([
 const answers_hash_map = new Map([
   ['S3', s3_response_handler],
   ['SNS', sns_response_handler],
+  ['SQS', sqs_response_handler],
   ['EXIT', exit_response_handler],
   ['COMPLETE', complete_response_handler]
 ]);
@@ -145,6 +145,7 @@ module.exports = class extends Generator {
 
     if(STATE === "COMPLETE") {
       console.log('Serverless Generator complete!');
+      await file.force_delete_directory(`${file.root()}syngenta-generator-temp`);
     } else {
       console.log('exiting and deleting resources.');
       await file.delete_file(`${file.root(true)}serverless.yml`);
@@ -156,6 +157,7 @@ module.exports = class extends Generator {
       await file.force_delete_directory(`${file.root(true)}db_versions`);
       await file.force_delete_directory(`${file.root(true)}.circleci`);
       await file.force_delete_directory(`${file.root(true)}.github`);
+      await file.force_delete_directory(`${file.root()}syngenta-generator-temp`);
     }
   }
 };
