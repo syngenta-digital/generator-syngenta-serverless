@@ -1,11 +1,12 @@
 const s3 = require('../../helpers/s3');
+const { acceptableBoolean } = require('../helpers/boolean');
 
 const _init = async (_this) => {
     return _this.prompt([
       {
         type    : 'input',
         name    : 'bucket_name',
-        message : `What would you like your S3 bucket name to be?`
+        message : `\n\n========================== CREATING S3 RESOURCE ==========================\n\nWhat would you like your S3 bucket name to be?`
       },
       {
         type    : 'input',
@@ -16,9 +17,10 @@ const _init = async (_this) => {
 }
 
 const _addBucket = async (args) => {
+  const _is_public = acceptableBoolean(args.is_public);
     await s3.init({
         bucket_name: args.bucket_name,
-        isPublic: args.is_public
+        isPublic: _is_public
     })
 }
 

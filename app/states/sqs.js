@@ -1,11 +1,12 @@
 const sqs = require('../../helpers/sqs');
+const { acceptableBoolean } = require('../helpers/boolean');
 
 const _init = async _this => {
     return _this.prompt([
         {
             type    : 'input',
             name    : 'queue_name',
-            message : `What would you like queue name to be?`
+            message : `\n\n========================== CREATING SQS RESOURCE ==========================\n\nWhat would you like queue name to be?`
         },
         {
             type    : 'input',
@@ -22,26 +23,9 @@ const _addQueue = async (queue_name, includeDLQ ) => {
     })
 }
 
-const _acceptableDLQ = (value) => {
-    switch(value) {
-        case 'yes':
-        case 't':
-        case 'y':
-        case 'true':
-        case 'yeah':
-        case 'ye':
-        case 'ya':
-        case 'yah':
-        case 'yeh':
-            return true;
-        default:
-            return false;
-    }
-}
-
 exports.handler = async _this => {
     const init_response = await _init(_this);
     const { queue_name, includeDLQ } = init_response;
-    const _includeDLQ = _acceptableDLQ();
+    const _includeDLQ = acceptableBoolean(includeDLQ);
     return _addQueue(queue_name, _includeDLQ);
 }

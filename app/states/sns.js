@@ -1,5 +1,6 @@
 const sns = require('../../helpers/sns');
 const file = require('../../helpers/file');
+const { acceptableBoolean } = require('../helpers/boolean');
 
 const timer = (time = 1000) => {
     return new Promise(resolve => {
@@ -71,16 +72,17 @@ const _init = async _this => {
         {
             type    : 'input',
             name    : 'topic_or_sub',
-            message : `Subscription or Topic?`
+            message : `========================== CREATING SNS RESOURCE ==========================\n\nSubscription or Topic?`
         }
     ])
 }
 
 const _addTopic = async (args) => {
     const { topic_name, dedup } = args;
+    const _dedup = acceptableBoolean(dedup);
     return sns.addTopic({
         topic_name,
-        dedup
+        dedup: _dedup
     })
 }
 

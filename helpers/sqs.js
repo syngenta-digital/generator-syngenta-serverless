@@ -30,7 +30,6 @@ const _environmentVariables = async () => {
         }
     }
 
-    
     await file.write_yaml(local_env_path, local_env);
 
     const cloud_env_path = `${file.root(true)}aws/envs/cloud.yml`;
