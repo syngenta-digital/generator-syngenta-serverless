@@ -20,12 +20,12 @@ const _subscription_handler = async _this => {
     return _this.prompt([
         {
             type    : 'input',
-            name    : 'sub_topic_name',
+            name    : 'topic_name',
             message : `What would you like topic name to be?`
         },
         {
             type    : 'input',
-            name    : 'sub_queue_name',
+            name    : 'queue_name',
             message : `Whats the SQS queue name you are going to use for your SNS subscription trigger?`
         }
     ])
@@ -59,13 +59,14 @@ const _addSubscription = async (args) => {
 
 exports.handler = async _this => {
     const init_response = await _init(_this);
+    console.log('logging init_response', init_response)
     if(init_response.topic_or_sub.toLowerCase() === "subscription") {
         const topic_response = await _subscription_handler(_this);
         console.log('logging topic_response', topic_response);
-        return _addTopic(topic_response);
+        return _addSubscription(topic_response);
     } else if (init_response.topic_or_sub.toLowerCase() === "topic") {
         const subscription_response = await _topic_handler(_this);
         console.log('logging subscription_response', subscription_response);
-        return _addSubscription(subscription_response);
+        return _addTopic(subscription_response);
     }
 }
