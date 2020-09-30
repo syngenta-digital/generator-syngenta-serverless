@@ -24,10 +24,31 @@ const _topic_handler = async _this => {
 
 const _subscription_handler = async _this => {
     // look at our current sqs queues and create a list of acceptable queues for user to pick?
-    const sqs_path = `${file.root(true)}/aws/resources/sqs.yml`;
+    const sqs_path = `${file.root(true)}aws/resources/sqs.yml`;
     const sqs_exists = await file.path_exists(sqs_path);
 
+    const no_queues_exist = async () => {
+        console.error('\n\n >>>>> ERROR: No SQS Queues in project to subscribe to! Please create a SQS resource to create an SNS Subscription resource.\n\n');
+        await timer(2000);
+        return { failed: true }
+    }
+
     if(sqs_exists) {
+        const read_sqs = await file.read_yaml(sqs_path);
+        const { Resources } = read_sqs;
+        const available_queues = [];
+
+        for (const [name, resource] of Object.entries(Resources)) {
+            if(!name.contains('DLQ') && !name.contains('Policy')) {
+                available_queues.push({
+                    name,
+                    resource
+                })
+            }
+        }
+        console.log('logging available_queues', available_queues);
+        if(available_queues.length === 0) return no_queues_exist();
+
         return _this.prompt([
             {
                 type    : 'input',
@@ -41,9 +62,7 @@ const _subscription_handler = async _this => {
             }
         ])
     } else {
-        console.error('\n\n >>>>> ERROR: No SQS Queues in project to subscribe to! Please create a SQS resource to create an SNS Subscription resource.\n\n');
-        await timer(2000);
-        return { failed: true }
+       return no_queues_exist();
     }
 }
 
