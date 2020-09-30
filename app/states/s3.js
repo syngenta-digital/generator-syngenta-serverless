@@ -1,6 +1,6 @@
 const s3 = require('../../helpers/s3');
 
-exports.default = (_this) => {
+const _init = async (_this) => {
     return _this.prompt([
       {
         type    : 'input',
@@ -22,6 +22,7 @@ const _addBucket = async (args) => {
     })
 }
 
-exports.handler = async args => {
+exports.handler = async _this => {
+  const args = await _init(_this);
   return _addBucket(args);
 }

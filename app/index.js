@@ -5,7 +5,9 @@ const Generator = require('yeoman-generator');
 const { default: init_serverless } = require('./states/init');
 const { default: menu } = require('./states/menu');
 const { default: add_service } = require('./states/add-service');
-const { default: s3Handler, handler: s3_response_handler } = require('./states/s3');
+const { handler: s3_response_handler } = require('./states/s3');
+const { handler: sns_response_handler } = require('./states/sns');
+
 const serverless = require('../helpers/serverless');
 const file = require('../helpers/file');
 
@@ -90,13 +92,15 @@ const convert_menu_answer = {
 const function_hash_map = new Map([
   ['INIT', menu],
   ['ADD-SERVICE', add_service],
-  ['S3', s3Handler],
+//   ['S3', s3_handler],
+//   ['SNS', sns_handler],
   ['EXIT', exit_response_handler],
   ['COMPLETE', complete_response_handler]
 ]);
 
 const answers_hash_map = new Map([
   ['S3', s3_response_handler],
+  ['SNS', sns_response_handler],
   ['EXIT', exit_response_handler],
   ['COMPLETE', complete_response_handler]
 ]);
@@ -127,8 +131,8 @@ module.exports = class extends Generator {
       for(const service of services) {
         await validateServerlessFileExists(init);
         this.state = service;
-        const args = await function_hash_map.get(service.toUpperCase())(this);
-        await answers_hash_map.get(service.toUpperCase())(args);
+        // const args = await function_hash_map.get(service.toUpperCase())(this);
+        await answers_hash_map.get(service.toUpperCase())(this);
         update_state(service.toUpperCase());
       }
 
