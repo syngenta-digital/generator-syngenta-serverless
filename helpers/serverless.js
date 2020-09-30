@@ -17,9 +17,32 @@ const {default: security_group_template}  = require('../templates/aws/resources/
 const {default: security_group_rules_template}  = require('../templates/aws/resources/mysql/security-group-rules');
 const {default: vpc_rds_template}  = require('../templates/aws/resources/vpc');
 const { default: sqs_queue_template } = require('../templates/aws/resources/sqs');
+const { default: local_env_template } = require('../templates/aws/envs/local');
 const { topic: sns_topic_template, subscription: sns_subscription_template } = require('../templates/aws/resources/sns');
 const { bucket, public_policy, website } = require('../templates/aws/resources/s3');
 const { ddbTemplate, s3Template, snsTemplate, sqsTemplate, ssmTemplate } = require('../templates/aws/iamRoles');
+
+const _initEnv = async () => {
+    const directories = [
+        'aws',
+        'aws/envs'
+    ]
+    await file.doesLocalDirectoriesExist(directories);
+    const local_env_path = `${file.root(true)}aws/envs/local.yml`;
+    const local_env_exists = await file.path_exists(local_env_path);
+    if(!local_env_exists) {
+        await file.write_yaml(local_env_path, local_env_template);
+    }
+    
+    const cloud_env_path = `${file.root(true)}aws/envs/cloud.yml`;
+    const cloud_env_exists = await file.path_exists(cloud_env_path);
+
+    if(!cloud_env_exists) {
+        return file.write_yaml(cloud_env_path, local_env_template);
+    }
+
+    return true;
+}
 
 const _initServerless = (app, service) => {
     return new Promise(async (resolve) => {
@@ -80,6 +103,8 @@ const _addBaseFiles = async () => {
             await file.copy_directory(`${file.root()}templates/basic/${template.src}`, _path);
         }
     }
+
+    await _initEnv();
 
     return true;
 }
