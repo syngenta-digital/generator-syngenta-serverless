@@ -63,7 +63,6 @@ const _initServerless = (app, service) => {
         await _addBaseFiles();
         await packagejson_helper.create(`api-node-${app}-${service}`);
         await _createRouterFunction();
-        // TODO: i think this will need to be changed if this is going to be a package
         resolve(file.write_yaml(`${file.root(true)}serverless.yml`, doc));
     })
 }
