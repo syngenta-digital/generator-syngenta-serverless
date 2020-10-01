@@ -2,6 +2,7 @@ const { assert } = require('chai');
 require('chai').should();
 const mock = require('../mock/data');
 const file = require('../../helpers/file');
+const env = require('../../helpers/env');
 const config = require('../../helpers/config');
 const elasticsearch = require('../../helpers/elasticsearch');
 const neo4j = require('../../helpers/neo4j');
@@ -202,6 +203,46 @@ describe('Syngenta Severless Generator Test Suite', () => {
             });
         });
     });
+    describe('Test Env Helper', () => {
+        describe('#addEnvVariable', () => {
+            const new_env_variable = {
+                key: 'testRemove',
+                value: {
+                    test: 'test'
+                }
+            }
+            it('should add these variables to env', () => {
+                return new Promise(async resolve => {
+                    const _path = `${file.root()}/aws/envs/local.yml`;
+                    await env.addEnvVariable(new_env_variable);
+                    const read_resource = await file.read_yaml(_path);
+                    assert.equal(JSON.stringify(read_resource.environment.testRemove), JSON.stringify(new_env_variable.value));
+                    const new_env_variable_two = {
+                        key: 'testRemoveTwo',
+                        value: {
+                            test: 'test'
+                        }
+                    }
+                    await env.addEnvVariable(new_env_variable_two);
+                    resolve();
+                });
+            });
+            it('should remove these variables to env', () => {
+                return new Promise(async resolve => {
+                    const _path = `${file.root()}/aws/envs/local.yml`;
+                    const read_resource = await file.read_yaml(_path);
+                    assert.equal(JSON.stringify(read_resource.environment.testRemove), JSON.stringify(new_env_variable.value));
+                    assert.equal(JSON.stringify(read_resource.environment.testRemoveTwo), JSON.stringify(new_env_variable.value));
+                    const remove_variables = ['testRemove', 'testRemoveTwo'];
+                    await env.removeEnvVariables(remove_variables);
+                    const post_read_resource = await file.read_yaml(_path);
+                    assert.equal(post_read_resource.environment.testRemove, undefined);
+                    assert.equal(post_read_resource.environment.testRemoveTwo, undefined);
+                    resolve();
+                });
+            });
+        })
+    })
     describe('Test Resource Generator', () => {
         describe('Test Package Json Helper', async () => {
             describe('#create', () => {
@@ -331,7 +372,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                 const path_exists = await file.path_exists(_expect);
                                 assert.equal(path_exists, true);
                             }
-                            
+
                             resolve();
                         })
                     });
