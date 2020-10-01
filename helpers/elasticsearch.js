@@ -72,7 +72,7 @@ const _addDomain = async (domain_name, index, type) => {
     read_resource.Resources[validResourceName(domain_name)] = es_template(domain_name);
     read_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Domain`] = {
         Value: {
-            Ref: domain_name
+            Ref: validResourceName(domain_name)
         }
     }
 
