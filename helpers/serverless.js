@@ -47,7 +47,6 @@ const _initEnv = async () => {
 
 const _initServerless = (app, service) => {
     return new Promise(async (resolve) => {
-        // TODO: this path stuff is way too confusing need to somehow reference parent dir.
         const _path = `${file.root(true)}serverless.yml`;
         const exists = await file.path_exists(_path);
         let doc = null;
@@ -255,7 +254,6 @@ const _ssmIamRoleHandler = async (api_name) => {
 
     const read_resource = await file.read_yaml(_path);
     const { Resource } = read_resource;
-    // 'arn:aws:s3:::${self:provider.stackTags.name}-pdf-storage/*'
     const expected_arn = `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stage}-${api_name}/*`;
     const find = Resource.find(x => x === expected_arn);
     if(!find) {
@@ -263,11 +261,9 @@ const _ssmIamRoleHandler = async (api_name) => {
     }
 
     return file.write_yaml(`${file.root(true)}aws/iamroles/ssm.yml`, read_resource);
-    // return file.write_yaml(`${file.root(true)}aws/iamroles/ssm.yml`, ssmTemplate(api_name));
 }
 
 const _addFunction = async (args) => {
-    // TODO: this path stuff is way too confusing need to somehow reference parent dir.
     const { hash_type } = args;
     const doc = await file.read_yaml(`${file.root(true)}serverless.yml`);
     const new_function = await functionHashMapper.get(hash_type)(args);
@@ -507,7 +503,7 @@ const elasticsearch_resource_handler = async (args) => {
     read_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Endpoint`] = {
         Value: null
     }
-    
+
     return read_resource;
 }
 
@@ -558,7 +554,6 @@ const _createResource = async (args) => {
 
 const _addResource = async (resource, args) => {
     await _resourcesDirectoriesExist();
-    // TODO: this path stuff is way too confusing need to somehow reference parent dir.
     const doc = await file.read_yaml(`${file.root(true)}serverless.yml`);
     if(!doc.resources) {
         doc.resources = [];
@@ -609,7 +604,6 @@ const _iamRoleDirectoriesExist = async () => {
 }
 
 const _addPlugin = async (plugin) => {
-    // TODO: this path stuff is way too confusing need to somehow reference parent dir.
     const _path = `${file.root(true)}serverless.yml`;
     const doc = await file.read_yaml(_path);
     const { plugins } = doc;
@@ -622,7 +616,6 @@ const _addPlugin = async (plugin) => {
 }
 
 const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucket_name) => {
-    // TODO: this path stuff is way too confusing need to somehow reference parent dir.
     await _iamRoleDirectoriesExist();
     const doc = await file.read_yaml(`${file.root(true)}serverless.yml`);
     const { provider } = doc;

@@ -58,7 +58,6 @@ const _addServerlessVariables = async () => {
     }
 
     await addCustom(accounts);
-    // need to add policies
 
     const policies = {
         key: 'policies',
@@ -71,22 +70,6 @@ const _addIamRoles = async () => {
     return addIamRole('./aws/iamroles/sns.yml', 'sns');
 }
 
-// TODO: this needs to be moved to serverless, but want to think it over so doing this here for now.
-const _addToServerless = async () => {
-    const doc = await file.read_yaml(`${file.root(true)}serverless.yml`);
-    if(!doc.resources) {
-        doc.resources = [];
-    }
-    const resource = `\${file(./aws/resources/sns.yml}`;
-    const does_exist = doc.resources.find(x => x === resource);
-    if(!does_exist) {
-        doc.resources.push(resource);
-        await file.write_yaml(`${file.root(true)}serverless.yml`, doc);
-    }
-
-    return true;
-}
-
 const _addResource = async (topic_name, queue_name, is_subscription, dedup) => {
     const resource = ['sns'];
     return serverless_helper.addResources(resource, {topic_name, queue_name, is_subscription, dedup});
@@ -96,9 +79,7 @@ exports.addTopic = async args => {
     const { topic_name, dedup } = args;
     await _addServerlessVariables();
     await _addIamRoles();
-    // await _addTopic(topic_name, dedup);
     await _addResource(topic_name, null, false, dedup);
-    await _addToServerless();
     return true;
 }
 
@@ -107,9 +88,7 @@ exports.addSubscription = async args => {
     await _environmentVariables();
     await _addServerlessVariables();
     await _addIamRoles();
-    // await _addSubscription(topic_name, queue_name);
     await _addResource(topic_name, queue_name, true);
-    await _addToServerless();
     return true;
 }
 

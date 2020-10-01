@@ -52,7 +52,6 @@ describe('Syngenta Severless Generator Test Suite', () => {
         logger.log('====== STARTUP COMPLETE MOVING ONTO TESTS ======')
     })
     after(async () => {
-        // TODO: this path stuff is way too confusing need to somehow reference parent dir.
         logger.log('====== TESTS COMPLETE MOVING TO CLEANUP ======')
         if(config.DEBUG) {
             await file.delete_file(`${file.root()}serverless.yml`);
