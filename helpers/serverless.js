@@ -7,6 +7,7 @@ const formatter = require('esformatter');
 const { validResourceName } = require('./string');
 const packagejson_helper  = require('../helpers/package-json');
 const {default: router_template}  = require('../templates/controller/apigateway/router');
+const { default: es_template } = require('../templates/aws/resources/elasticsearch');
 const {default: apigateway_template}  = require('../templates/aws/resources/apigateway');
 const {default: dynamodb_table_template}  = require('../templates/aws/resources/dynamodb/table');
 const {default: dynamodb_database_template}  = require('../templates/aws/resources/dynamodb/database');
@@ -478,6 +479,38 @@ const sns_resource_handler = async (args) => {
     }
 }
 
+const elasticsearch_resource_handler = async (args) => {
+    const _path = `${file.root(true)}aws/resources/elasticsearch.yml`;
+    const { domain_name } = args;
+    const base = {
+        Resources: {},
+        Outputs: {}
+    }
+
+    const does_exist = await file.path_exists(_path);
+    if(!does_exist) {
+        await file.write_yaml(_path, base);
+    }
+
+    const read_resource = await file.read_yaml(_path);
+    read_resource.Resources[validResourceName(domain_name)] = es_template(domain_name);
+    read_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Domain`] = {
+        Value: {
+            Ref: validResourceName(domain_name)
+        }
+    }
+
+    read_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Arn`] = {
+        Value: null
+    }
+
+    read_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Endpoint`] = {
+        Value: null
+    }
+    
+    return read_resource;
+}
+
 
 const _createResource = async (args) => {
     let fn = null;
@@ -511,6 +544,9 @@ const _createResource = async (args) => {
             break;
         case 'sns':
             fn = sns_resource_handler;
+            break;
+        case 'elasticsearch':
+            fn = elasticsearch_resource_handler;
             break;
         default:
             throw new Error('invalid resource');

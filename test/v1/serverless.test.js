@@ -1270,7 +1270,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                 test_resource.Resources[validResourceName(domain_name)] = es_template(domain_name);
                                 test_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Domain`] = {
                                     Value: {
-                                        Ref: domain_name
+                                        Ref: validResourceName(domain_name)
                                     }
                                 }
                             
@@ -1288,6 +1288,45 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                 assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${validResourceName(domain_name)}Endpoint`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Endpoint`]));
                             }
 
+                            resolve();
+                        });
+                    });
+                    it('make sure both env\'s are correct', () => {
+                        return new Promise(async resolve => {
+                            const local_env_path = `${file.root()}aws/envs/local.yml`;
+                            const local_env_exists = await file.path_exists(local_env_path);
+                            assert.equal(local_env_exists, true);
+                            const local_env = await file.read_yaml(local_env_path);
+                            const template_local_env = {};
+                            for(const [domain_name, _data] of Object.entries(data)) {
+                                const { index, type } = _data;
+                                template_local_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`] = index;
+                                template_local_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`] = type;
+                                template_local_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`] = domain_name;
+
+                                assert.equal(template_local_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`], local_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`]);
+                                assert.equal(template_local_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`], local_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`]);
+                                assert.equal(template_local_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`], local_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`]);
+                            }
+                                               
+                            
+                            const cloud_env_path = `${file.root()}aws/envs/cloud.yml`;
+                            const cloud_env_exists = await file.path_exists(cloud_env_path);                        
+                            const cloud_env = await file.read_yaml(cloud_env_path);
+                            assert.equal(cloud_env_exists, true);
+                            const template_cloud_env = {};
+                            for(const [domain_name, _data] of Object.entries(data)) {
+                                const { index, type } = _data;
+                                template_cloud_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`] = index;
+                                template_cloud_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`] = type;
+                                template_cloud_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`] = {
+                                    'FN::GetAtt': [ `ElasticSearch${domain_name}`, 'DomainEndpoint' ]
+                                }
+
+                                assert.equal(template_cloud_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`], cloud_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_INDEX`]);
+                                assert.equal(template_cloud_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`], cloud_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_')}_TYPE`]);
+                                assert.equal(JSON.stringify(template_cloud_env[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`]), JSON.stringify(cloud_env.environment[`ELASTICSEARCH_${domain_name.replace(/-/g, '_').toUpperCase()}_DOMAIN`]));
+                            }
                             resolve();
                         });
                     });
