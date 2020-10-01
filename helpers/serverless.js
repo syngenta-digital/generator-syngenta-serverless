@@ -287,7 +287,7 @@ const dynamodb_resource_handler = async (args) => {
     } else {
         read_resource = await file.read_yaml(_resource_path);
     }
-    read_resource.Resources[args.db_name] = dynamodb_table_template(args.db_name);
+    read_resource.Resources[validResourceName(args.db_name)] = dynamodb_table_template(args.db_name);
     return read_resource;
 }
 
@@ -361,7 +361,7 @@ const rds_mysql_resource_handler = async (args) => {
     } else {
         read_resource = await file.read_yaml(_resource_path);
     }
-    read_resource.Resources[args.db_name] = rds_dbinstance_template(args);
+    read_resource.Resources[validResourceName(args.db_name)] = rds_dbinstance_template(args);
     // add correct vpc port
     await _addVpcPort(args, 'mysql');
     return read_resource;
@@ -376,7 +376,7 @@ const rds_postgres_resource_handler = async (args) => {
     } else {
         read_resource = await file.read_yaml(_resource_path);
     }
-    read_resource.Resources[args.db_name] = rds_dbinstance_template(args);
+    read_resource.Resources[validResourceName(args.db_name)] = rds_dbinstance_template(args);
     // add correct vpc port 
     await _addVpcPort(args, 'postgres');
     return read_resource;
@@ -408,10 +408,10 @@ const s3_resource_handler = async (args) => {
     }
     
     const template = bucket(args.bucket_name);
-    read_resource.Resources[`${args.bucket_name}Storage`] = template;
+    read_resource.Resources[`${validResourceName(args.bucket_name)}Storage`] = template;
     if(args.isPublic) {
         const public_policy_template = public_policy(args.bucket_name);
-        read_resource.Resources[`AttachmentsBucketAllowPublicReadPolicy${args.bucket_name}`] = public_policy_template;
+        read_resource.Resources[`AttachmentsBucketAllowPublicReadPolicy${validResourceName(args.bucket_name)}`] = public_policy_template;
     }
 
     return read_resource;

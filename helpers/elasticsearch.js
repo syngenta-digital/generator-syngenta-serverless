@@ -1,9 +1,7 @@
-const { custom_es, default: es_template } = require('../templates/aws/resources/elasticsearch');
-
-const path = require('path');
 const file = require('./file');
-const mock = require('../test/mock/data');
 const serverless_helper = require('./serverless');
+const { validResourceName } = require('./string');
+const { custom_es, default: es_template } = require('../templates/aws/resources/elasticsearch');
 
 const _environmentVariables = async (domain_name, index, type) => {
     const directories = [
@@ -71,18 +69,18 @@ const _addDomain = async (domain_name, index, type) => {
     }
 
     const read_resource = await file.read_yaml(_path);
-    read_resource.Resources[domain_name] = es_template(domain_name);
-    read_resource.Outputs[`Elasticsearch${domain_name}Domain`] = {
+    read_resource.Resources[validResourceName(domain_name)] = es_template(domain_name);
+    read_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Domain`] = {
         Value: {
             Ref: domain_name
         }
     }
 
-    read_resource.Outputs[`Elasticsearch${domain_name}Arn`] = {
+    read_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Arn`] = {
         Value: null
     }
 
-    read_resource.Outputs[`Elasticsearch${domain_name}Endpoint`] = {
+    read_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Endpoint`] = {
         Value: null
     }
     return file.write_yaml(_path, read_resource);

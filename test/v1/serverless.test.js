@@ -752,7 +752,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                         switch(resource) {
                                             case 'rds-mysql':
                                                 const _template = rds_mysql_template();
-                                                _template.Resources[db_name] = db_template;
+                                                _template.Resources[validResourceName(db_name)] = db_template;
                                                 assert.equal(JSON.stringify(_resource), JSON.stringify(_template));
                                                 break;
                                             // case 'security-group-rules':
@@ -965,7 +965,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                     switch(resource) {
                                         case 'rds-postgres':
                                             const _template = rds_postgres_template();
-                                            _template.Resources[db_name] = rds_dbinstance_template({db_name, engine: 'postgres'})
+                                            _template.Resources[validResourceName(db_name)] = rds_dbinstance_template({db_name, engine: 'postgres'})
                                             assert.equal(JSON.stringify(_resource), JSON.stringify(_template));
                                             break;
                                         // case 'security-group-rules':
@@ -1139,7 +1139,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             assert.equal(resource_exists, true);
                             const read_file = await file.read_yaml(_path);
                             const { Resources } = read_file;
-                            assert.notEqual(Resources[db_name], undefined);
+                            assert.notEqual(Resources[validResourceName(db_name)], undefined);
                             resolve();
                         });
                     });
@@ -1267,25 +1267,25 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             }
 
                             for(const [domain_name, _data] of Object.entries(data)) {
-                                test_resource.Resources[domain_name] = es_template(domain_name);
-                                test_resource.Outputs[`Elasticsearch${domain_name}Domain`] = {
+                                test_resource.Resources[validResourceName(domain_name)] = es_template(domain_name);
+                                test_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Domain`] = {
                                     Value: {
                                         Ref: domain_name
                                     }
                                 }
                             
-                                test_resource.Outputs[`Elasticsearch${domain_name}Arn`] = {
+                                test_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Arn`] = {
                                     Value: null
                                 }
                             
-                                test_resource.Outputs[`Elasticsearch${domain_name}Endpoint`] = {
+                                test_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Endpoint`] = {
                                     Value: null
                                 }
         
-                                assert.equal(JSON.stringify(_serverless_yaml.Resources[domain_name]), JSON.stringify(test_resource.Resources[domain_name]));
-                                assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${domain_name}Domain`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${domain_name}Domain`]));
-                                assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${domain_name}Arn`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${domain_name}Arn`]));
-                                assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${domain_name}Endpoint`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${domain_name}Endpoint`]));
+                                assert.equal(JSON.stringify(_serverless_yaml.Resources[validResourceName(domain_name)]), JSON.stringify(test_resource.Resources[validResourceName(domain_name)]));
+                                assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${validResourceName(domain_name)}Domain`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Domain`]));
+                                assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${validResourceName(domain_name)}Arn`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Arn`]));
+                                assert.equal(JSON.stringify(_serverless_yaml.Outputs[`Elasticsearch${validResourceName(domain_name)}Endpoint`]), JSON.stringify(test_resource.Outputs[`Elasticsearch${validResourceName(domain_name)}Endpoint`]));
                             }
 
                             resolve();
