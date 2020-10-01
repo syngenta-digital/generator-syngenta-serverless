@@ -50,8 +50,8 @@ const _environmentVariables = async () => {
     return file.write_yaml(cloud_env_path, cloud_env);
 }
 
-const _addIamRoles = async () => {
-    return addIamRole('./aws/iamroles/sqs.yml', 'sqs');
+const _addIamRoles = async (queue_name) => {
+    return addIamRole('./aws/iamroles/sqs.yml', 'sqs', null, null, queue_name);
 }
 
 const _addResource = async (args) => {
@@ -60,7 +60,7 @@ const _addResource = async (args) => {
 }
 
 exports.init = async args => {
-    await _addIamRoles();
+    await _addIamRoles(args.queue_name);
     await _environmentVariables();
     await _addServerlessVariables();
     await _addResource(args);

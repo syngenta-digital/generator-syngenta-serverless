@@ -66,8 +66,8 @@ const _addServerlessVariables = async () => {
     return addCustom(policies);
 }
 
-const _addIamRoles = async () => {
-    return addIamRole('./aws/iamroles/sns.yml', 'sns');
+const _addIamRoles = async (topic_name) => {
+    return addIamRole('./aws/iamroles/sns.yml', 'sns', null, null, null, topic_name);
 }
 
 const _addResource = async (topic_name, queue_name, is_subscription, dedup) => {
@@ -78,7 +78,7 @@ const _addResource = async (topic_name, queue_name, is_subscription, dedup) => {
 exports.addTopic = async args => {
     const { topic_name, dedup } = args;
     await _addServerlessVariables();
-    await _addIamRoles();
+    await _addIamRoles(topic_name);
     await _addResource(topic_name, null, false, dedup);
     return true;
 }

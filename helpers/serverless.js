@@ -234,12 +234,26 @@ const _s3IamRoleHandler = async (bucket_name) => {
     return file.write_yaml(`${file.root(true)}aws/iamroles/s3.yml`, read_resource);
 }
 
-const _snsIamRoleHandler = async () => {
-    return file.write_yaml(`${file.root(true)}aws/iamroles/sns.yml`, snsTemplate());
+const _snsIamRoleHandler = async (topic_name, region = 'us-east-2') => {
+    const _path = `${file.root(true)}aws/iamroles/sns.yml`;
+    const _exists = await file.path_exists(_path);
+    const _arn = `arn:aws:sns:${region}:\${self:custom.accounts.\${self:provider.stage}}:${validResourceName(topic_name)}`;
+    if(!_exists) return file.write_yaml(_path, snsTemplate(_arn));
+    
+    const read_resource = await file.read_yaml(_path);
+    read_resource.Resource.push(arn);
+    return file.write_yaml(_path, read_resource);
 }
 
-const _sqsIamRoleHandler = async () => {
-    return file.write_yaml(`${file.root(true)}aws/iamroles/sqs.yml`, sqsTemplate());
+const _sqsIamRoleHandler = async (queue_name, region = 'us-east-2') => {
+    const _path = `${file.root(true)}aws/iamroles/sqs.yml`;
+    const _exists = await file.path_exists(_path);
+    const _arn = `arn:aws:sqs:${region}:\${self:custom.accounts.\${self:provider.stage}}:${validResourceName(queue_name)}`;
+    if(!_exists) return file.write_yaml(_path, sqsTemplate(_arn));
+    
+    const read_resource = await file.read_yaml(_path);
+    read_resource.Resource.push(arn);
+    return file.write_yaml(_path, read_resource);
 }
 
 const _ssmIamRoleHandler = async (api_name) => {
@@ -614,7 +628,7 @@ const _addPlugin = async (plugin) => {
     return file.write_yaml(_path, doc);
 }
 
-const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucket_name) => {
+const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucket_name, queue_name, topic_name) => {
     await _iamRoleDirectoriesExist();
     const doc = await file.read_yaml(`${file.root(true)}serverless.yml`);
     const { provider } = doc;
@@ -640,10 +654,10 @@ const _addIamRole = async (_path, add_to_aws_directory, service, api_name, bucke
                     await _s3IamRoleHandler(bucket_name);
                     break;
                 case 'sns':
-                    await _snsIamRoleHandler();
+                    await _snsIamRoleHandler(topic_name);
                     break;
                 case 'sqs':
-                    await _sqsIamRoleHandler();
+                    await _sqsIamRoleHandler(queue_name);
                     break;
                 case 'ssm':
                     await _ssmIamRoleHandler(api_name);
@@ -680,10 +694,10 @@ exports.addFunction = async (args) => {
  * @param {api_name} api_name this is the api_name, if it applies. (Optional)
  * @param {bucket_name} bucket_name this is the bucket_name, if it applies. (Optional)
  */
-exports.addIamRole = async (path, service, api_name, bucket_name) => {
+exports.addIamRole = async (path, service, api_name, bucket_name, queue_name, topic_name) => {
     let add_to_aws_directory = false;
     if (available_iamroles.indexOf(service) > -1) add_to_aws_directory = true;
-    return _addIamRole(path, add_to_aws_directory, service, api_name, bucket_name);
+    return _addIamRole(path, add_to_aws_directory, service, api_name, bucket_name, queue_name, topic_name);
 }
 /**
  * 

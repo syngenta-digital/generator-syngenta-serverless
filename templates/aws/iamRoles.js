@@ -39,19 +39,19 @@ exports.s3Template = (bucket_name) => {
   }
 }
 
-exports.snsTemplate = () => {
+exports.snsTemplate = (arn) => {
   return {
     Effect: 'Allow',
     Action: [
       'SNS:Publish'
     ],
     Resource: [
-      '${self:custom.policies.sns}'
+      arn
     ]
   }
 }
 
-exports.sqsTemplate = () => {
+exports.sqsTemplate = (arn) => {
   return {
     Effect: 'Allow',
     Action: [
@@ -59,7 +59,7 @@ exports.sqsTemplate = () => {
       'sqs:ReceiveMessage'
     ],
     Resource: [
-      '${self:custom.policies.sqs}'
+      arn
     ]
   }
 }
