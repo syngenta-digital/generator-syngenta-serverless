@@ -481,7 +481,6 @@ const sns_resource_handler = async (args) => {
 
 const _createResource = async (args) => {
     let fn = null;
-    console.log('hit _create rsource', args.resource)
     switch(args.resource) {
         case 'apigateway':
             fn = apigateway_template;

@@ -1,7 +1,6 @@
 const fs = require('fs');
 const fs_extra = require('fs-extra');
 const yaml = require('js-yaml');
-const { resolve } = require('path');
 const path = require('path');
 const rimraf = require("rimraf");
 const logger = require('./logger');
@@ -72,37 +71,6 @@ const _write_yaml = (target_path, json) => {
             resolve(true);
         });
     })
-    // return new Promise(async resolve => {
-    //     let root_path = `${path.join(__dirname, '..')}/`;
-    //     const config_path = `${root_path}syngenta-generator-temp/config.yml`;
-    //     console.log('logging config_path', config_path);
-    //     // const exists = fs.access(config_path);
-    //     fs.access(path, (err) => {
-    //         if (!err) {
-    //             const read_resource = yaml.safeLoad(fs.readFileSync(config_path, 'utf8'));
-    //             console.log('logging read_resource', read_resource);
-    //             if(read_resource.root) {
-    //                 root_path = read_resource.root;
-    //             }
-    //         }
-
-    //         const read_resource = yaml.safeLoad(fs.readFileSync(config_path, 'utf8'));
-    //         console.log('logging read_resource', read_resource);
-    //         if(read_resource.root) {
-    //             root_path = read_resource.root;
-    //         }
-    //         console.log('logging root_path', root_path);
-    //         // fs.writeFile(`${root_path}/${target_path}`, yaml.safeDump(json), (err) => {
-    //         fs.writeFile(target_path, yaml.safeDump(json), (err) => {
-    //             if (err) {
-    //                 logger.warn(err);
-    //                 resolve(false);
-    //             }
-        
-    //             resolve(true);
-    //         });
-    //     });
-    // })
 }
 
 const _get_root_project_directory = (is_target_root) => {

@@ -322,11 +322,16 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                 '.github/dependabot.yml',
                                 '.nvmrc',
                                 '.npmrc',
+                                'aws',
+                                'aws/envs',
+                                'aws/envs/local.yml',
+                                'aws/envs/cloud.yml'
                             ]
                             for(const _expect of expected) {
                                 const path_exists = await file.path_exists(_expect);
                                 assert.equal(path_exists, true);
                             }
+                            
                             resolve();
                         })
                     });
@@ -1330,6 +1335,37 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             resolve();
                         });
                     });
+                    it('serverless variables are set correctly', () => {
+                        return new Promise(async resolve => {
+                            const _serverless_yaml = await file.read_yaml(`${file.root()}serverless.yml`)
+                            const { custom } = _serverless_yaml;
+                            const { policies } = custom;
+                            assert.equal(policies, '${file(./aws/envs/${opt:aws_envs, \'local\'}.yml):policies}');
+                            resolve();
+                        });
+                    });
+                    it('make sure the custom serverless variables exist', () => {
+                        return new Promise(async resolve => {
+                            const local_path = `${file.root()}aws/envs/local.yml`;
+                            const cloud_path = `${file.root()}aws/envs/cloud.yml`;
+                            const local_exists = await file.path_exists(local_path);
+                            const cloud_exists = await file.path_exists(cloud_path);
+                            assert.equal(local_exists, true);
+                            assert.equal(cloud_exists, true);
+                            const read_local_resource = await file.read_yaml(local_path);
+                            const read_cloud_resource = await file.read_yaml(cloud_path);
+                            assert.notEqual(read_local_resource, undefined);
+                            assert.notEqual(read_cloud_resource, undefined);
+                            assert.equal(read_local_resource.policies.sqs, '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}');
+                            assert.equal(read_cloud_resource.policies.sqs, '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}');
+                            // make sure iam role is actually referencing the same policy
+                            const iam_role_path = `${file.root()}aws/iamroles/sqs.yml`;
+                            const read_iamrole_resource = await file.read_yaml(iam_role_path);
+                            const { Resource } = read_iamrole_resource;
+                            assert.equal(Resource[0], '${self:custom.policies.sqs}');
+                            resolve();
+                        });
+                    });
                 });
                 describe('#sns', () => {
                     const queue_name = 'GrowerContracts';
@@ -1395,7 +1431,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                         return new Promise(async resolve => {
                             const _serverless_yaml = await file.read_yaml(`${file.root()}serverless.yml`)
                             const { custom } = _serverless_yaml;
-                            const { accounts } = custom;
+                            const { accounts, policies } = custom;
 
                             assert.notEqual(accounts, undefined);
                             const expected = {
@@ -1407,6 +1443,30 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             }
 
                             assert.equal(JSON.stringify(expected), JSON.stringify(accounts));
+                            assert.equal(policies, '${file(./aws/envs/${opt:aws_envs, \'local\'}.yml):policies}');
+                            resolve();
+                        });
+                    });
+                    it('make sure the custom serverless permissions exist', () => {
+                        return new Promise(async resolve => {
+                            const local_path = `${file.root()}aws/envs/local.yml`;
+                            const cloud_path = `${file.root()}aws/envs/cloud.yml`;
+                            const local_exists = await file.path_exists(local_path);
+                            const cloud_exists = await file.path_exists(cloud_path);
+                            assert.equal(local_exists, true);
+                            assert.equal(cloud_exists, true);
+                            const read_local_resource = await file.read_yaml(local_path);
+                            const read_cloud_resource = await file.read_yaml(cloud_path);
+                            assert.notEqual(read_local_resource, undefined);
+                            assert.notEqual(read_cloud_resource, undefined);
+                            assert.equal(read_local_resource.policies.sns, '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}');
+                            assert.equal(read_cloud_resource.policies.sns, '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}');
+                            // make sure iam role is actually referencing the same policy
+                            const iam_role_path = `${file.root()}aws/iamroles/sns.yml`;
+                            const read_iamrole_resource = await file.read_yaml(iam_role_path);
+                            const { Resource } = read_iamrole_resource;
+                            assert.equal(Resource[0], '${self:custom.policies.sns}');
+                            resolve();
                             resolve();
                         });
                     });

@@ -4,8 +4,8 @@ const { default: local_env_template } = require('../templates/aws/envs/local');
 
 const _addServerlessVariables = async () => {
     const policies = {
-        key: 'arn',
-        value: '${file(./aws/envs/${opt:aws_envs, \'local\'}.yml):arn}'
+        key: 'policies',
+        value: '${file(./aws/envs/${opt:aws_envs, \'local\'}.yml):policies}'
     }
     return addCustom(policies);
 }

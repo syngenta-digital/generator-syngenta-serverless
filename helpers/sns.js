@@ -62,7 +62,7 @@ const _addServerlessVariables = async () => {
 
     const policies = {
         key: 'policies',
-        value: 'policies: ${file(./aws/envs/${opt:aws_envs, \'local\'}.yml):policies}'
+        value: '${file(./aws/envs/${opt:aws_envs, \'local\'}.yml):policies}'
     }
     return addCustom(policies);
 }

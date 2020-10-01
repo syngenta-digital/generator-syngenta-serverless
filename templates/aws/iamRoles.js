@@ -59,7 +59,7 @@ exports.sqsTemplate = () => {
       'sqs:ReceiveMessage'
     ],
     Resource: [
-      '${self:custom.arn.sqs}'
+      '${self:custom.policies.sqs}'
     ]
   }
 }
