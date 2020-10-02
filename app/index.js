@@ -8,7 +8,11 @@ const { default: add_service } = require('./states/add-service');
 const { handler: s3_response_handler } = require('./states/s3');
 const { handler: sns_response_handler } = require('./states/sns');
 const { handler: sqs_response_handler } = require('./states/sqs');
+const { handler: dynamodb_response_handler } = require('./states/dynamodb');
 const { handler: apigateway_response_handler } = require('./states/apigateway');
+const { handler: mysql_response_handler } = require('./states/rds-mysql');
+const { handler: postgres_response_handler } = require('./states/rds-postgres');
+
 
 const serverless = require('../helpers/serverless');
 const file = require('../helpers/file');
@@ -29,6 +33,8 @@ const STATE_ENUM = [
 ]
 
 let STATE = 'INIT';
+let app = '';
+let service = '';
 
 const reset = () => {
   update_state('INIT');
@@ -102,7 +108,10 @@ const answers_hash_map = new Map([
   ['S3', s3_response_handler],
   ['SNS', sns_response_handler],
   ['SQS', sqs_response_handler],
+  ['DYNAMODB', dynamodb_response_handler],
   ['APIGATEWAY', apigateway_response_handler],
+  ['MYSQL', mysql_response_handler],
+  ['POSTGRES', postgres_response_handler],
   ['EXIT', exit_response_handler],
   ['COMPLETE', complete_response_handler]
 ]);
@@ -120,7 +129,7 @@ module.exports = class extends Generator {
   }
 
   async start() {
-    this.log('Do something...');
+    this.log('Starting generator...');
     await tempDirectoryConfig(`${this.destinationPath()}/`);
     const init = await init_serverless(this);
     const loop = async () => {
@@ -140,6 +149,9 @@ module.exports = class extends Generator {
 
       return true;
     }
+
+    this._syngenta_app = init.app;
+    this._syngenta_service = init.service;
 
     while(STATE !== "EXIT" && STATE !== "COMPLETE") {
       await loop();

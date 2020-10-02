@@ -254,12 +254,12 @@ const _sqsIamRoleHandler = async (queue_name, region = 'us-east-2') => {
 }
 
 const _ssmIamRoleHandler = async (api_name) => {
-    const _path = `${file.root(true)}aws/iamroles/s3.yml`;
+    const _path = `${file.root(true)}aws/iamroles/ssm.yml`;
     const path_exists = await file.path_exists(_path);
 
     if(!path_exists) {
         console.log('path doesnt exist, creating now')
-        return file.write_yaml(`${file.root(true)}aws/iamroles/s3.yml`, ssmTemplate(api_name));
+        return file.write_yaml(`${file.root(true)}aws/iamroles/ssm.yml`, ssmTemplate(api_name));
     }
 
     const read_resource = await file.read_yaml(_path);
@@ -368,7 +368,7 @@ const rds_mysql_resource_handler = async (args) => {
     } else {
         read_resource = await file.read_yaml(_resource_path);
     }
-    read_resource.Resources[validResourceName(args.db_name)] = rds_dbinstance_template(args);
+    read_resource.Resources[`${validResourceName(args.db_name)}DB`] = rds_dbinstance_template(args);
     // add correct vpc port
     await _addVpcPort(args, 'mysql');
     return read_resource;
@@ -383,7 +383,7 @@ const rds_postgres_resource_handler = async (args) => {
     } else {
         read_resource = await file.read_yaml(_resource_path);
     }
-    read_resource.Resources[validResourceName(args.db_name)] = rds_dbinstance_template(args);
+    read_resource.Resources[`${validResourceName(args.db_name)}DB`] = rds_dbinstance_template(args);
     // add correct vpc port 
     await _addVpcPort(args, 'postgres');
     return read_resource;
