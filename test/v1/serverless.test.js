@@ -17,23 +17,23 @@ const logger = require('../../helpers/logger');
 const serverless_helper = require('../../helpers/serverless');
 const {validResourceName} = require('../../helpers/string');
 const { addPackage, addScript, create: create_package_json, read_me, delete_me } = require('../../helpers/package-json');
-// const { default: neo4j_versioner_template } = require('../../templates/controller/console/neo4j_dbversioner');
-// const { default: mysql_versioner_template } = require('../../templates/controller/console/mysql_dbversioner');
-// const { default: router_template } = require('../../templates/controller/apigateway/router');
 const { default: rds_postgres_template } = require('../../templates/aws/resources/postgres/rds-postgres');
 const { default: rds_mysql_template } = require('../../templates/aws/resources/mysql/rds-mysql');
 const { topic: sns_topic_template, subscription: sns_subscription_template } = require('../../templates/aws/resources/sns');
 const { default: sqs_template } = require('../../templates/aws/resources/sqs');
 const { bucket: s3_bucket_template, public_policy: s3_public_policy_template } = require('../../templates/aws/resources/s3');
 const { default: rds_dbinstance_template } = require('../../templates/aws/resources/rds-dbinstance');
-const { default: security_group_rules_template } = require('../../templates/aws/resources/mysql/security-group-rules');
 const { default: security_group_template } = require('../../templates/aws/resources/mysql/security-group');
 const { default: vpc_rds_template } = require('../../templates/aws/resources/vpc');
-const { default: apigateway_template}  = require('../../templates/aws/resources/apigateway');
 const { default: local_mysql_template } = require('../../templates/aws/local/mysql');
 const { default: local_postgres_template } = require('../../templates/aws/local/postgres');
 const { custom_es, default: es_template } = require('../../templates/aws/resources/elasticsearch');
-const { ddbTemplate, s3Template, snsTemplate, sqsTemplate, ssmTemplate } = require('../../templates/aws/iamRoles');
+const { ddbTemplate } = require('../../templates/aws/iamRoles');
+// const { default: neo4j_versioner_template } = require('../../templates/controller/console/neo4j_dbversioner');
+// const { default: mysql_versioner_template } = require('../../templates/controller/console/mysql_dbversioner');
+// const { default: router_template } = require('../../templates/controller/apigateway/router');
+// const { default: security_group_rules_template } = require('../../templates/aws/resources/mysql/security-group-rules');
+// const { default: apigateway_template}  = require('../../templates/aws/resources/apigateway');
 
 
 const base_temp_path = `${file.root()}temp`;
@@ -1371,6 +1371,8 @@ describe('Syngenta Severless Generator Test Suite', () => {
                 })
                 describe('#sqs', () => {
                     const queue_name = 'GrowerContracts';
+                    const region = 'us-east-2';
+                    const arn = `arn:aws:sqs:${region}:\${self:custom.accounts.\${self:provider.stage}}:${validResourceName(queue_name)}`
                     before(async () => {
                         await sqs.init({
                             queue_name,
@@ -1409,8 +1411,8 @@ describe('Syngenta Severless Generator Test Suite', () => {
                         return new Promise(async resolve => {
                             const _path = `${file.root()}aws/iamroles/sqs.yml`;
                             const read_resource = await file.read_yaml(_path);
-                            const template = sqsTemplate();
-                            assert.equal(JSON.stringify(read_resource), JSON.stringify(template));
+                            const find_arn = read_resource.Resource.find(x => x === arn);
+                            assert.notEqual(find_arn, undefined);
                             resolve();
                         });
                     });
@@ -1437,11 +1439,6 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             assert.notEqual(read_cloud_resource, undefined);
                             assert.equal(read_local_resource.policies.sqs, '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}');
                             assert.equal(read_cloud_resource.policies.sqs, '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}');
-                            // make sure iam role is actually referencing the same policy
-                            const iam_role_path = `${file.root()}aws/iamroles/sqs.yml`;
-                            const read_iamrole_resource = await file.read_yaml(iam_role_path);
-                            const { Resource } = read_iamrole_resource;
-                            assert.equal(Resource[0], '${self:custom.policies.sqs}');
                             resolve();
                         });
                     });
@@ -1449,6 +1446,8 @@ describe('Syngenta Severless Generator Test Suite', () => {
                 describe('#sns', () => {
                     const queue_name = 'GrowerContracts';
                     const topic_name = 'GrowerContractsNotifications';
+                    const region = 'us-east-2';
+                    const arn = `arn:aws:sns:${region}:\${self:custom.accounts.\${self:provider.stage}}:${validResourceName(topic_name)}`
                     before(async () => {
                         await sns.addTopic({
                             topic_name
@@ -1501,8 +1500,8 @@ describe('Syngenta Severless Generator Test Suite', () => {
                         return new Promise(async resolve => {
                             const _path = `${file.root()}aws/iamroles/sns.yml`;
                             const read_resource = await file.read_yaml(_path);
-                            const template = snsTemplate();
-                            assert.equal(JSON.stringify(read_resource), JSON.stringify(template));
+                            const find_arn = read_resource.Resource.find(x => x === arn);
+                            assert.notEqual(find_arn, undefined);
                             resolve();
                         });
                     });
@@ -1540,12 +1539,6 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             assert.notEqual(read_cloud_resource, undefined);
                             assert.equal(read_local_resource.policies.sns, '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}');
                             assert.equal(read_cloud_resource.policies.sns, '${cf:${self:provider.stage}-platform-model-revisions.ModelRevisionTopicName}');
-                            // make sure iam role is actually referencing the same policy
-                            const iam_role_path = `${file.root()}aws/iamroles/sns.yml`;
-                            const read_iamrole_resource = await file.read_yaml(iam_role_path);
-                            const { Resource } = read_iamrole_resource;
-                            assert.equal(Resource[0], '${self:custom.policies.sns}');
-                            resolve();
                             resolve();
                         });
                     });

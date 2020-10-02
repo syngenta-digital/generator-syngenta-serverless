@@ -61,7 +61,7 @@ const validateServerlessFileExists = async args => {
   return true;
 }
 
-const tempDirectoryConfig = async (app, root) => {
+const tempDirectoryConfig = async (root) => {
   const _path = `${file.root()}${root_temp_directory}`;
   const exists = await file.path_exists(_path);
   if(!exists) {
@@ -119,7 +119,7 @@ module.exports = class extends Generator {
 
   async start() {
     this.log('Do something...');
-    await tempDirectoryConfig('test', `${this.destinationPath()}/`);
+    await tempDirectoryConfig(`${this.destinationPath()}/`);
     const init = await init_serverless(this);
     const loop = async () => {
       const menu_answer = await menu(this);
