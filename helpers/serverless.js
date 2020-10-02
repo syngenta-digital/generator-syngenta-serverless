@@ -45,26 +45,23 @@ const _initEnv = async () => {
     return true;
 }
 
-const _initServerless = (app, service) => {
-    return new Promise(async (resolve) => {
-        const _path = `${file.root(true)}serverless.yml`;
-        const exists = await file.path_exists(_path);
-        let doc = null;
-        if(!exists) {
-            doc = await file.read_yaml(`${file.root()}templates/serverless/serverless.yml`);
-        } else {
-            doc = await file.read_yaml(_path);
-        }
-        if(!doc) {
-            doc = {}
-        }
-        doc.app = app;
-        doc.service = service;
-        await _addBaseFiles();
-        await packagejson_helper.create(`api-node-${app}-${service}`);
-        await _createRouterFunction();
-        resolve(file.write_yaml(`${file.root(true)}serverless.yml`, doc));
-    })
+const _initServerless = async (app, service) => {
+    const _path = `${file.root(true)}serverless.yml`;
+    const exists = await file.path_exists(_path);
+    let doc = null;
+    if(!exists) {
+        doc = await file.read_yaml(`${file.root()}templates/serverless/serverless.yml`);
+    } else {
+        doc = await file.read_yaml(_path);
+    }
+    if(!doc) {
+        doc = {}
+    }
+    doc.app = app;
+    doc.service = service;
+    await _addBaseFiles();
+    await packagejson_helper.create(`api-node-${app}-${service}`);
+    return file.write_yaml(`${file.root(true)}serverless.yml`, doc);
 }
 
 const _addBaseFiles = async () => {

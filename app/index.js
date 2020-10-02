@@ -8,6 +8,7 @@ const { default: add_service } = require('./states/add-service');
 const { handler: s3_response_handler } = require('./states/s3');
 const { handler: sns_response_handler } = require('./states/sns');
 const { handler: sqs_response_handler } = require('./states/sqs');
+const { handler: apigateway_response_handler } = require('./states/apigateway');
 
 const serverless = require('../helpers/serverless');
 const file = require('../helpers/file');
@@ -101,6 +102,7 @@ const answers_hash_map = new Map([
   ['S3', s3_response_handler],
   ['SNS', sns_response_handler],
   ['SQS', sqs_response_handler],
+  ['APIGATEWAY', apigateway_response_handler],
   ['EXIT', exit_response_handler],
   ['COMPLETE', complete_response_handler]
 ]);
