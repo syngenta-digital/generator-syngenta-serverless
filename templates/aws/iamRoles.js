@@ -71,7 +71,7 @@ exports.ssmTemplate = (api_name = '*') => {
       'ssm:*'
     ],
     Resource: [
-      `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}-${api_name}/*`
+      `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}/*`
     ]
   }
 }

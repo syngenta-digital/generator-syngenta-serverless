@@ -264,7 +264,8 @@ const _ssmIamRoleHandler = async (api_name) => {
 
     const read_resource = await file.read_yaml(_path);
     const { Resource } = read_resource;
-    const expected_arn = `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stage}-${api_name}/*`;
+    const expected_arn = `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}/*`;
+    console.log('logging arn', expected_arn);
     const find = Resource.find(x => x === expected_arn);
     if(!find) {
         read_resource.Resource.push(expected_arn);

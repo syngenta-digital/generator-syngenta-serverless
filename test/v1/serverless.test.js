@@ -561,7 +561,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                                 return new Promise(async resolve => {
                                     const serverless_yml = await file.read_yaml(`${file.root()}aws/iamroles/ssm.yml`);
                                     const { Resource } = serverless_yml;
-                                    const find = Resource.find(x => x === `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}-${api_name}/*`)
+                                    const find = Resource.find(x => x === `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}/*`)
                                     assert.notEqual(find, undefined);
                                     resolve();
                                 })
@@ -715,7 +715,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                 });
                 describe('#rds-mysql', () => {
                     const db_name = 'grower-tests';
-                    const expected_arn = `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}-${db_name}/*`;
+                    const expected_arn = `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}/*`;
                     const db_template = rds_dbinstance_template({db_name, engine: 'mysql'})
                     const ssm_iamrole_path = `${file.root()}aws/iamroles/ssm.yml`;
                     const serverless_path = `${file.root()}serverless.yml`;
@@ -929,7 +929,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
                 });
                 describe('#rds-postgres', () => {
                     const db_name = 'grower-tests';
-                    const expected_arn = `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}-${db_name}/*`;
+                    const expected_arn = `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}/*`;
                     const ssm_iamrole_path = `${file.root()}aws/iamroles/ssm.yml`;
                     const serverless_path = `${file.root()}serverless.yml`;
                     before(async () => {

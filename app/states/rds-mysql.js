@@ -17,5 +17,5 @@ const _addRdsMysql = async (args) => {
 exports.handler = async _this => {
   const args = await _init(_this);
   const formatted_api_name = _this._syngenta_app && _this._syngenta_service ? `${_this._syngenta_app}-${_this._syngenta_service}` : `${this.appname}`;
-  return _addRdsMysql({...args, api_name: `\${self:provider.stackTags.name}-${formatted_api_name}`});
+  return _addRdsMysql({...args, api_name: `${formatted_api_name}`});
 }
