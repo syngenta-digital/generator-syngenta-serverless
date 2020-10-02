@@ -241,7 +241,7 @@ const _snsIamRoleHandler = async (topic_name, region = 'us-east-2') => {
     if(!_exists) return file.write_yaml(_path, snsTemplate(_arn));
     
     const read_resource = await file.read_yaml(_path);
-    read_resource.Resource.push(arn);
+    read_resource.Resource.push(_arn);
     return file.write_yaml(_path, read_resource);
 }
 
@@ -252,7 +252,7 @@ const _sqsIamRoleHandler = async (queue_name, region = 'us-east-2') => {
     if(!_exists) return file.write_yaml(_path, sqsTemplate(_arn));
     
     const read_resource = await file.read_yaml(_path);
-    read_resource.Resource.push(arn);
+    read_resource.Resource.push(_arn);
     return file.write_yaml(_path, read_resource);
 }
 

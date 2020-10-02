@@ -147,7 +147,7 @@ module.exports = class extends Generator {
       console.log('Serverless Generator complete!');
       await file.force_delete_directory(`${file.root()}syngenta-generator-temp`);
     } else {
-      console.log('exiting and deleting resources.\n\n COMPLETE! \n\n');
+      console.log('\n\n> exiting and deleting resources.\n\n> COMPLETE! \n\n');
       await file.delete_file(`${file.root(true)}serverless.yml`);
       await file.delete_file(`${file.root(true)}package.json`);
       await file.delete_file(`${file.root(true)}.nvmrc`);
