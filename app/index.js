@@ -12,7 +12,8 @@ const { handler: dynamodb_response_handler } = require('./states/dynamodb');
 const { handler: apigateway_response_handler } = require('./states/apigateway');
 const { handler: mysql_response_handler } = require('./states/rds-mysql');
 const { handler: postgres_response_handler } = require('./states/rds-postgres');
-
+const { handler: elasticsearch_response_handler } = require('./states/elasticsearch');
+const { handler: neo4j_response_handler } = require('./states/neo4j');
 
 const serverless = require('../helpers/serverless');
 const file = require('../helpers/file');
@@ -25,6 +26,8 @@ const STATE_ENUM = [
   'RDS-MYSQL',
   'RDS-POSTGRES',
   'DYNAMODB',
+  'ELASTICSEARCH',
+  'NEO4J',
   'S3',
   'SNS',
   'SQS',
@@ -110,8 +113,10 @@ const answers_hash_map = new Map([
   ['SQS', sqs_response_handler],
   ['DYNAMODB', dynamodb_response_handler],
   ['APIGATEWAY', apigateway_response_handler],
+  ['ELASTICSEARCH', elasticsearch_response_handler],
   ['MYSQL', mysql_response_handler],
   ['POSTGRES', postgres_response_handler],
+  ['NEO4J', neo4j_response_handler],
   ['EXIT', exit_response_handler],
   ['COMPLETE', complete_response_handler]
 ]);
