@@ -1,4 +1,4 @@
-const neo4j = require('../../helpers/s3');
+const neo4j = require('../../helpers/neo4j');
 
 const _init = async (_this) => {
     return _this.prompt([
