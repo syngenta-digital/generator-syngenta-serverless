@@ -45,7 +45,7 @@ const _initEnv = async () => {
     return true;
 }
 
-const _initServerless = async (app, service) => {
+const _initServerless = async (app, service, runtime = 'nodejs12.x') => {
     const _path = `${file.root(true)}serverless.yml`;
     const exists = await file.path_exists(_path);
     let doc = null;
@@ -59,20 +59,22 @@ const _initServerless = async (app, service) => {
     }
     doc.app = app;
     doc.service = service;
-    await _addBaseFiles();
+    doc.provider.runtime = runtime;
+    await _addBaseFiles(runtime);
     await packagejson_helper.create(`api-node-${app}-${service}`);
     return file.write_yaml(`${file.root(true)}serverless.yml`, doc);
 }
 
-const _addBaseFiles = async () => {
+const _addBaseFiles = async (runtime = 'nodejs12.x') => {
     const directories = [
         '.circleci',
-        '.github'
+        '.github',
+        'application'
     ]
     await file.doesLocalDirectoriesExist(directories);
     const templates = [
         {
-            src: '.circleci',
+            src: `.circleci-${runtime.replace('.', '')}`,
             target: '.circleci/',
             dir: true
         },
@@ -101,6 +103,7 @@ const _addBaseFiles = async () => {
     }
 
     await _initEnv();
+    await file.copy_directory(`${file.root()}templates/application`, `${file.root(true)}/application`);
 
     return true;
 }
@@ -258,14 +261,12 @@ const _ssmIamRoleHandler = async (api_name) => {
     const path_exists = await file.path_exists(_path);
 
     if(!path_exists) {
-        console.log('path doesnt exist, creating now')
         return file.write_yaml(`${file.root(true)}aws/iamroles/ssm.yml`, ssmTemplate(api_name));
     }
 
     const read_resource = await file.read_yaml(_path);
     const { Resource } = read_resource;
     const expected_arn = `arn:aws:ssm:\${self:provider.region}:*:parameter/\${self:provider.stackTags.name}/*`;
-    console.log('logging arn', expected_arn);
     const find = Resource.find(x => x === expected_arn);
     if(!find) {
         read_resource.Resource.push(expected_arn);
@@ -674,8 +675,8 @@ const _isPlainObject = (input) => {
  * @param {app} app the app name
  * @param {service} service the service name
  */
-exports.init = async (app, service) => {
-    return _initServerless(app, service);
+exports.init = async (app, service, runtime = 'nodejs12.x') => {
+    return _initServerless(app, service, runtime);
 }
 /**
  * 

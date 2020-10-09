@@ -93,7 +93,6 @@ const _subscription_handler = async _this => {
         if(available_queues.length === 0) await no_queues_exist();
 
         const available_topics = await _available_topics();
-        console.log('logging (available_topics.length === 0)', available_topics)
         if(available_topics.length === 0) return no_topics_exist();
 
         if(available_topics.length === 0 && available_queues.length === 0) return null;

@@ -2,6 +2,7 @@
 const Generator = require('yeoman-generator');
 // const yaml = require('js-yaml');
 // const fs = require('fs');
+const { supported_node_versions, supported_python_versions, supported_java_versions, map_runtime_object_to_runtime } = require('./helpers/runtimes');
 const { default: init_serverless } = require('./states/init');
 const { default: menu } = require('./states/menu');
 const { default: add_service } = require('./states/add-service');
@@ -65,7 +66,7 @@ const validateServerlessFileExists = async args => {
   const _path = `${file.root(true)}serverless.yml`;
   const exists = await file.path_exists(_path);
   if(!exists) {
-    await serverless.init(args.app, args.service);
+    await serverless.init(args.app, args.service, args.runtime_normalized);
   }
 
   return true;
@@ -127,6 +128,83 @@ const menu_hash_mapper = new Map([
   ['exit', 'EXIT'],
 ])
 
+const _analyze_runtime_from_response = (runtime, runtime_version) => {
+  const result = {
+    runtime: null,
+    runtime_version: null
+  }
+  switch(runtime) {
+    case 'node':
+      result.runtime = 'node';
+      if(!runtime_version || supported_node_versions.indexOf(runtime_version) === -1) {
+        result.runtime_version = '12';
+      }
+      else {
+        result.runtime_version = runtime_version;
+      }
+      break;
+    case 'python':
+      result.runtime = 'python';
+      if(!runtime_version || supported_python_versions.indexOf(runtime_version) === -1) {
+        result.runtime_version = '3.8';
+      }
+      else {
+        result.runtime_version = runtime_version;
+      }
+      break;
+    case 'java':
+      result.runtime = 'java';
+      if(!runtime_version || supported_java_versions.indexOf(runtime_version) === -1) {
+        result.runtime_version = '11';
+      }
+      else {
+        result.runtime_version = runtime_version;
+      }
+      break;
+    default:
+      result.runtime = 'node';
+      result.runtime_version = '12';
+      break;
+  }
+
+  return result;
+}
+
+const analyze_runtime_from_serverless = runtime => {
+  const node = runtime.indexOf('node') > -1;
+  const python = runtime.indexOf('python') > -1;
+  const java = runtime.indexOf('java') > -1;
+
+  const result = {
+    runtime: null,
+    runtime_version: null
+  }
+
+  if(node) {
+    result.runtime = 'node';
+    let match_version = runtime.split('nodejs')[1];
+    if(match_version.indexOf('.') > -1) {
+      match_version = match_version.split('.')[0];
+      if(supported_node_versions.indexOf(match_version) > -1) result.runtime_version = match_version;
+      else result.runtime_version = supported_node_versions[0];
+    }
+  } else if(python) {
+    result.runtime = 'python';
+    let match_version = runtime.split('python')[1];
+    if(supported_python_versions.indexOf(match_version) > -1) result.runtime_version = match_version;
+    else result.runtime_version = supported_python_versions[0];
+  } else if(java) {
+    result.runtime = 'java';
+    let match_version = runtime.split('java')[1];
+    if(supported_java_versions.indexOf(match_version) > -1) result.runtime_version = match_version;
+    else result.runtime_version = supported_java_versions[0];
+  } else {
+    throw new Error('unsupported runtime detected')
+  }
+
+  return result;
+}
+
 module.exports = class extends Generator {
   constructor(args, opts) {
     super(args, opts);
@@ -135,8 +213,15 @@ module.exports = class extends Generator {
 
   async start() {
     this.log('Starting generator...');
+    const _serverless_path = `${this.destinationPath()}/serverless.yml`;
+    let serverless_exists = await file.path_exists(_serverless_path);
+    if(serverless_exists) {
+      const read_serverless = await file.read_yaml(_serverless_path);
+      if(!read_serverless.app && !read_serverless.service) serverless_exists = false;
+    }
+
     await tempDirectoryConfig(`${this.destinationPath()}/`);
-    const init = await init_serverless(this);
+
     const loop = async () => {
       const menu_answer = await menu(this);
       const new_state = menu_hash_mapper.get(convert_menu_answer[menu_answer.menu]);
@@ -154,9 +239,40 @@ module.exports = class extends Generator {
 
       return true;
     }
+    let init = null;
+
+    if(!serverless_exists) {
+      init = await init_serverless(this);
+      const analyze_response = _analyze_runtime_from_response(init.runtime, init.runtime_version);
+      init = {
+        ...init,
+        runtime: analyze_response.runtime,
+        runtime_version: analyze_response.runtime_version
+      }
+    } else {
+      const read_serverless = await file.read_yaml(_serverless_path);
+      const { app, service, provider } = read_serverless;
+      let _runtime = null;
+      if(provider) {
+        const { runtime } = provider;
+        _runtime = analyze_runtime_from_serverless(runtime);
+      }
+
+      const { runtime, runtime_version } = _runtime;
+
+      init = {
+        app,
+        service,
+        runtime,
+        runtime_version
+      }
+    }
 
     this._syngenta_app = init.app;
     this._syngenta_service = init.service;
+    const runtime_normalized = map_runtime_object_to_runtime(init);
+    this._syngenta_runtime_normalized = runtime_normalized;
+    init.runtime_normalized = runtime_normalized;
 
     while(STATE !== "EXIT" && STATE !== "COMPLETE") {
       await loop();
