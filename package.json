@@ -9,6 +9,7 @@
         "report": "nyc report",
         "test": "SYNGENTA_SERVERLESS_DEBUG=true unittest=true nyc mocha --recursive"
     },
+    "repository": "git://github.com/syngenta-digital/generator-syngenta-serverless.git",
     "author": "",
     "license": "ISC",
     "dependencies": {
