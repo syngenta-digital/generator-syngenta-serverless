@@ -6,6 +6,26 @@ const rimraf = require("rimraf");
 const logger = require('./logger');
 const config = require('./config');
 
+const _find_aws_root_path = () => {
+    switch(process.platform) {
+        case 'win':
+            return '%USERPROFILE%\\.aws\\config';
+        case 'darwin':
+        case 'linux':
+            return '~/.aws/';
+        default:
+            throw new Error(`unsupported operating system ${process.platform}`)
+    }
+}
+
+const _aws_config_route = () => {
+    return `${_find_aws_root_path()}config`;
+}
+
+const _aws_credemtials_route = () => {
+    return `${_find_aws_root_path()}credentials`;
+}
+
 const _read_file = (path, do_not_parse_json) => {
     return new Promise((resolve) => {
         fs.readFile(path, null, (err, data) => {
@@ -168,4 +188,12 @@ exports.path_exists = async (path) => {
 
 exports.root = (is_target_root) => {
     return _get_root_project_directory(is_target_root);
+}
+
+exports.aws_config_route = () => {
+    return _aws_config_route();
+}
+
+exports.aws_credemtials_route = () => {
+    return _aws_credemtials_route();
 }
