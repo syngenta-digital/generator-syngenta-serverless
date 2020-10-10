@@ -20,11 +20,11 @@ const _find_aws_root_path = () => {
 }
 
 const _aws_config_route = () => {
-    return `${_find_aws_root_path()}${process.env.SYNGENTA_SERVERLESS_DEBUG ? 'config2' : 'config'}`;
+    return `${_find_aws_root_path()}${process.env.SYNGENTA_SERVERLESS_DEBUG ? 'config2' : 'config2'}`;
 }
 
 const _aws_credentials_route = () => {
-    return `${_find_aws_root_path()}${process.env.SYNGENTA_SERVERLESS_DEBUG ? 'credentials2' : 'credentials'}`;
+    return `${_find_aws_root_path()}${process.env.SYNGENTA_SERVERLESS_DEBUG ? 'credentials2' : 'credentials2'}`;
 }
 
 const _read_file = (path, do_not_parse_json) => {

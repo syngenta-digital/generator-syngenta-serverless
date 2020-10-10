@@ -68,7 +68,9 @@ const _map_runtime_object_to_runtime = (_runtime) => {
 }
 
 exports.versions_string = `\n\nnode: ${_supported_node_versions.join(', ')} (defaults to 12);\n\npython ${_supported_python_versions.join(', ')} (defaults to 3.8);\n\njava ${_supported_java_versions.join(', ')} (defaults to 11)`;
-
+exports.node_versions_string = `\n\nnode: ${_supported_node_versions.join(', ')}`;
+exports.python_versions_string = `\n\npython: ${_supported_python_versions.join(', ')}`;
+exports.java_versions_string = `\n\njava: ${_supported_java_versions.join(', ')}`;
 exports.supported_node_versions = _supported_node_versions;
 exports.supported_python_versions = _supported_python_versions;
 exports.supported_java_versions = _supported_java_versions;

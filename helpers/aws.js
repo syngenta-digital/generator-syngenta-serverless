@@ -2,10 +2,11 @@ const file = require('./file');
 const os = require('os');
 const fs = require('fs');
 
-const _write_default_config = async () => {
+const _write_default_config = async (region) => {
     await fs.appendFileSync(file.aws_config_route(), `[profile default]${os.EOL}`);
     await fs.appendFileSync(file.aws_config_route(), `region=${region}${os.EOL}`);
     await fs.appendFileSync(file.aws_config_route(), `output=json${os.EOL}`);
+    return true;
 }
 
 const _doesProfileExist = async (profile_name, isConfig) => {
@@ -30,7 +31,7 @@ const _doesProfileExist = async (profile_name, isConfig) => {
     }
 }
 
-const _writeDefaults = async () => {
+const _writeDefaults = async (region) => {
     try {
         const directories = [
             `${file.aws_route()}`
@@ -39,10 +40,10 @@ const _writeDefaults = async () => {
 
         const config_exists = await file.read_file(file.aws_config_route());
         if(!config_exists) {
-            await _write_default_config();
+            await _write_default_config(region);
         } else {
             const default_profile_exists = await _doesProfileExist('default', true);
-            if(!default_profile_exists) await _write_default_config();
+            if(!default_profile_exists) await _write_default_config(region);
         }
         const credentials_exist = await file.read_file(file.aws_credentials_route());
         if(!credentials_exist) await fs.appendFileSync(file.aws_credentials_route(), '');        
@@ -56,14 +57,15 @@ const _writeDefaults = async () => {
 const _addProfile = async (profile_name, account_id, role_name, mfa_serial = false) => {
     const config_exists = await file.read_file(file.aws_config_route());
     if(!config_exists) {
+        console.log('config doesnt exist writing default')
         await _write_default_config();
-    } else {
-        const profile_exists = await _doesProfileExist(profile_name, true);
-        if(!profile_exists) {
-            await fs.appendFileSync(file.aws_config_route(), `[profile ${profile_name}]${os.EOL}`);
-            await fs.appendFileSync(file.aws_config_route(), `role_arn=arn:aws:iam::${account_id}:role/${role_name}${os.EOL}`);
-            if(mfa_serial) await fs.appendFileSync(file.aws_config_route(), `mfa_serial=${mfa_serial}${os.EOL}`);
-        }
+    }
+
+    const profile_exists = await _doesProfileExist(profile_name, true);
+    if(!profile_exists) {
+        await fs.appendFileSync(file.aws_config_route(), `[profile ${profile_name}]${os.EOL}`);
+        await fs.appendFileSync(file.aws_config_route(), `role_arn=arn:aws:iam::${account_id}:role/${role_name}${os.EOL}`);
+        if(mfa_serial) await fs.appendFileSync(file.aws_config_route(), `mfa_serial=${mfa_serial}${os.EOL}`);
     }
 
     return true;    
@@ -90,8 +92,8 @@ exports.addCredentials = async (access_key, secret_key, name, region = 'us-east-
     return _addCredentials(access_key, secret_key, name);
 }
 
-exports.writeDefaults = async () => {
-    return _writeDefaults();
+exports.writeDefaults = async (region = 'us-east-2') => {
+    return _writeDefaults(region);
 }
 
 exports.doesProfileExist = async (profile_name, isConfig) => {

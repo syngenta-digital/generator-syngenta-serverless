@@ -19,7 +19,8 @@
         "fs-extra": "^9.0.1",
         "js-yaml": "^3.14.0",
         "os": "^0.1.1",
-        "path": "^0.12.7"
+        "path": "^0.12.7",
+        "yeoman-generator": "^4.12.0"
     },
     "devDependencies": {
         "chai": "^4.2.0",
