@@ -1,4 +1,5 @@
 const fs = require('fs');
+const os = require('os');
 const fs_extra = require('fs-extra');
 const yaml = require('js-yaml');
 const path = require('path');
@@ -12,18 +13,18 @@ const _find_aws_root_path = () => {
             return '%USERPROFILE%\\.aws\\config';
         case 'darwin':
         case 'linux':
-            return '~/.aws/';
+            return `${os.homedir()}/.aws/`;
         default:
             throw new Error(`unsupported operating system ${process.platform}`)
     }
 }
 
 const _aws_config_route = () => {
-    return `${_find_aws_root_path()}config`;
+    return `${_find_aws_root_path()}${process.env.SYNGENTA_SERVERLESS_DEBUG ? 'config2' : 'config'}`;
 }
 
-const _aws_credemtials_route = () => {
-    return `${_find_aws_root_path()}credentials`;
+const _aws_credentials_route = () => {
+    return `${_find_aws_root_path()}${process.env.SYNGENTA_SERVERLESS_DEBUG ? 'credentials2' : 'credentials'}`;
 }
 
 const _read_file = (path, do_not_parse_json) => {
@@ -35,7 +36,13 @@ const _read_file = (path, do_not_parse_json) => {
                 return;
             }
             if(do_not_parse_json) resolve(data);
-            else resolve(JSON.parse(data));
+            else {
+                try {
+                    resolve(JSON.parse(data));
+                } catch(e) {
+                    resolve(data);
+                }
+            }
         });
     })
 }
@@ -194,6 +201,10 @@ exports.aws_config_route = () => {
     return _aws_config_route();
 }
 
-exports.aws_credemtials_route = () => {
-    return _aws_credemtials_route();
+exports.aws_credentials_route = () => {
+    return _aws_credentials_route();
+}
+
+exports.aws_route = () => {
+    return _find_aws_root_path();
 }

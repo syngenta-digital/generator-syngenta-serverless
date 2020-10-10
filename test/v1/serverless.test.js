@@ -3,6 +3,7 @@ require('chai').should();
 const mock = require('../mock/data');
 const file = require('../../helpers/file');
 const env = require('../../helpers/env');
+const aws_config_helper = require('../../helpers/aws');
 const config = require('../../helpers/config');
 const elasticsearch = require('../../helpers/elasticsearch');
 const neo4j = require('../../helpers/neo4j');
@@ -57,6 +58,8 @@ describe('Syngenta Severless Generator Test Suite', () => {
             await file.delete_file(`${file.root()}serverless.yml`);
             await file.delete_file(`${file.root()}package2.json`);
             await file.delete_file(`${file.root()}.nvmrc`);
+            if(process.env.SYNGENTA_SERVERLESS_DEBUG) await file.delete_file(file.aws_config_route());
+            if(process.env.SYNGENTA_SERVERLESS_DEBUG) await file.delete_file(file.aws_credentials_route());
             await file.force_delete_directory(`${file.root()}aws`);
             await file.force_delete_directory(`${file.root()}application`);
             await file.force_delete_directory(`${file.root()}db_versions`);
@@ -65,7 +68,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
         }
         logger.log('====== COMPLETE =====')
     })
-    describe('Test File Helper', () => {
+    describe('File Helper', () => {
         describe('#file', () => {
           it('create_directory', () => {
             return new Promise(async resolve => {
@@ -124,7 +127,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
           })
         });
       });
-    describe('Test Package Json Helper', () => {
+    describe('Package Json Helper', () => {
         describe('#create', () => {
           describe('#addScripts', () => {
             it('add Scripts Array', () => {
@@ -202,7 +205,7 @@ describe('Syngenta Severless Generator Test Suite', () => {
             });
         });
     });
-    describe('Test Env Helper', () => {
+    describe('Env Helper', () => {
         describe('#addEnvVariable', () => {
             const new_env_variable = {
                 key: 'testRemove',
@@ -242,7 +245,37 @@ describe('Syngenta Severless Generator Test Suite', () => {
             });
         })
     })
-    describe('Test Resource Generator', () => {
+    describe('AWS Config Helper', () => {
+        const region = 'us-east-1';
+        const config_profile_name = 'dev';
+        const config_account_id = '11111222222';
+        const config_role_name = 'DevOp';
+        const config_mfa_serial = 'arn:aws:iam::111111111111:mfa/test@syngenta.com';
+        const credentials_profile_name = 'default';
+        const credentials_access_key = 'AAAAAAAAAAAAAAAAAAAA';
+        const credentials_secret_key = 'AAa11AA1AAaAaaa1aA111AAaaAAAAaaAaa1AAA1';
+        before(async () => {
+            await aws_config_helper.writeDefaults(region);
+            // create config profile
+            await aws_config_helper.addProfile(config_profile_name, config_account_id, config_role_name, config_mfa_serial);
+            // create credential profile
+            await aws_config_helper.addCredentials(credentials_access_key, credentials_secret_key, credentials_profile_name, region);
+        })
+
+        it('default profile exists in config', async () => {
+            const default_config_profile_exists = await aws_config_helper.doesProfileExist('default', true);
+            assert(default_config_profile_exists, true);
+        });
+        it('config profile exists in config', async () => {
+            const default_config_profile_exists = await aws_config_helper.doesProfileExist(config_profile_name, true);
+            assert(default_config_profile_exists, true);
+        });
+        it('config profile exists in config', async () => {
+            const default_credentials_profile_exists = await aws_config_helper.doesProfileExist(credentials_profile_name);
+            assert(default_credentials_profile_exists, true);
+        });
+    });
+    describe('Resource Generator', () => {
         describe('Test Package Json Helper', async () => {
             describe('#create', () => {
                 describe('#addScripts', () => {
