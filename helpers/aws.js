@@ -19,11 +19,9 @@ const _doesProfileExist = async (profile_name, isConfig) => {
             if(profile.indexOf('[') > -1 && profile.indexOf(']') > -1) {
                 let _profile_name = profile.replace('[', '').replace(']', '');
                 if(isConfig) _profile_name = _profile_name.split('profile ')[1];
-                console.log('logging pf', _profile_name.trim().toLowerCase(), profile_name.trim().toLowerCase())
                 if(_profile_name.trim().toLowerCase() === profile_name.trim().toLowerCase()) found_profile = true;
             }
         }
-        console.log('logging found profile', found_profile);
         return found_profile;
     } catch(e) {
         console.warn('logging error in looking for profile, will return false printing error', e);
@@ -57,7 +55,6 @@ const _writeDefaults = async (region) => {
 const _addProfile = async (profile_name, account_id, role_name, mfa_serial = false) => {
     const config_exists = await file.read_file(file.aws_config_route());
     if(!config_exists) {
-        console.log('config doesnt exist writing default')
         await _write_default_config();
     }
 

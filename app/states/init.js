@@ -69,7 +69,6 @@ const _profile_loop  = async _this => {
       message : `========================== \n\n CONFIGURING AWS \n\n ========================== \n Type the corresponding number and press enter:\n\n 1) Add config profile \n 2) Add credential profile \n 3) Exit AWS Configuration (default 3)\n\n`
     }
   ]);
-  console.log('logging main_menu_choice', main_menu_choice, typeof main_menu_choice.configuring_aws_option);
 
   if(main_menu_choice.configuring_aws_option && main_menu_choice.configuring_aws_option !== '3' && (main_menu_choice.configuring_aws_option === '1' || main_menu_choice.configuring_aws_option === '2')) {
     STATE = "SET_UP_PROFILE";
@@ -132,9 +131,7 @@ exports.default = async _this => {
   ];
 
   const base_questions =  await _this.prompt(base);
-  console.log('logging base_questions', base_questions);
   const aws_profiles = acceptableBoolean(base_questions.aws_profiles);
-  console.log('logging aws_profiles', aws_profiles);
 
   if(aws_profiles) {
     STATE = "SET_UP_PROFILE";
