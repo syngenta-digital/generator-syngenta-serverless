@@ -29,7 +29,7 @@ const _config_questions = [
   {
     type    : 'input',
     name    : 'role_name',
-    message : `\n\nWhat's the role name (found at the end of the IAM role ARN: arn:aws:iam::111111111111:role/ROLE_NAME_HERE)?\n\n>`
+    message : `\n\nWhat's the role name (found at the end of the IAM role ARN: arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME_HERE)?\n\n>`
   },
   {
     type    : 'input',
