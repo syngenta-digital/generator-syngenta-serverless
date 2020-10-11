@@ -4,7 +4,7 @@
     "description": "",
     "main": "app/index.js",
     "scripts": {
-        "lint": "eslint application/**",
+        "lint": "eslint helpers/**",
         "sct": "sct",
         "report": "nyc report",
         "test": "SYNGENTA_SERVERLESS_DEBUG=true unittest=true nyc mocha --recursive"

@@ -9,6 +9,38 @@ const _write_default_config = async (region) => {
     return true;
 }
 
+const _does_env_variable_exist = async () => {
+    const env_variable = process.env.AWS_SDK_LOAD_CONFIG;
+    if(!env_variable || (env_variable && env_variable == 1)) {
+        const shell = process.env.SHELL;
+        let _path = '';
+    
+        switch(shell) {
+            case '/bin/bash':
+                // does ~/.bashrc exist?
+                const test_path = `${os.homedir()}/.bashrc`;
+                const exists = await file.path_exists(test_path);
+                if(!exists) {
+                    _path = `${os.homedir()}/.bash_profile`;
+                }
+                
+                break;
+            case '/bin/zsh':
+                _path = `${os.homedir()}/.zshrc`;
+                break;
+            default:
+                console.warn('Unsupported shell for automatic loading of AWS_SDK_LOAD_CONFIG env variable.')
+                return true;
+        }
+    
+        const exists = await file.path_exists(_path);
+        if(exists && !env_variable) {
+            process.env.AWS_SDK_LOAD_CONFIG = 1;
+            await fs.appendFileSync(_path, `export AWS_SDK_LOAD_CONFIG=1${os.EOL}`);
+        }
+    }
+}
+
 const _doesProfileExist = async (profile_name, isConfig) => {
     const _path = isConfig ? file.aws_config_route() : file.aws_credentials_route();
     const get_profiles = await fs.readFileSync(_path, 'utf-8');
@@ -44,7 +76,9 @@ const _writeDefaults = async (region) => {
             if(!default_profile_exists) await _write_default_config(region);
         }
         const credentials_exist = await file.read_file(file.aws_credentials_route());
-        if(!credentials_exist) await fs.appendFileSync(file.aws_credentials_route(), '');        
+        if(!credentials_exist) await fs.appendFileSync(file.aws_credentials_route(), '');
+        
+        await _does_env_variable_exist();
         return true
     } catch (error) {
         console.warn(error);
