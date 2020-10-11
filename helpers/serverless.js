@@ -296,7 +296,7 @@ const dynamodb_resource_handler = async (args) => {
     } else {
         read_resource = await file.read_yaml(_resource_path);
     }
-    read_resource.Resources[validResourceName(args.db_name)] = dynamodb_table_template(args.db_name);
+    read_resource.Resources[validResourceName(args.db_name)] = dynamodb_table_template(args.db_name, args.range_key);
     return read_resource;
 }
 

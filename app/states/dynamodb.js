@@ -6,6 +6,11 @@ const _init = async (_this) => {
         type    : 'input',
         name    : 'db_name',
         message : `\n\n========================== CREATING DYNAMODB RESOURCE ==========================\n\nWhat would you like your Dynamo DB name to be?`
+      },
+      {
+        type    : 'input',
+        name    : 'range_key',
+        message : `What would you like (leave blank if none) for a range (sort) key?`
       }
     ])
 }

@@ -1,5 +1,5 @@
-const template = (db_name) => {
-    return {
+const template = (db_name, range_key) => {
+    const base = {
         Type: "AWS::DynamoDB::Table",
         Properties: {
             TableName: `\${self:provider.stackTags.name}-${db_name.toLowerCase()}`,
@@ -38,6 +38,33 @@ const template = (db_name) => {
             ]
         }
     }
+
+    if(range_key) {
+        base.Properties.AttributeDefinitions.push({
+            AttributeName: range_key,
+            AttributeType: "S"
+        })
+
+        base.Properties.KeySchema.push({
+            AttributeName: range_key,
+            KeyType: "RANGE"
+        })
+
+        base.Properties.GlobalSecondaryIndexes.push({
+            IndexName: range_key,
+            KeySchema: [
+                {
+                    AttributeName: range_key,
+                    KeyType: "HASH"
+                }
+            ],
+            Projection: {
+                ProjectionType: "ALL"
+            }
+        })
+    }
+
+    return base;
 }
 
 exports.default = template;

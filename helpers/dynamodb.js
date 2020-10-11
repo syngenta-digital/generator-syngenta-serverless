@@ -73,12 +73,13 @@ const _addEnvironmentVariables = async (db_name) => {
     return file.write_yaml(`${file.root(true)}aws/envs/cloud.yml`, cloud_env);
 }
 
-const _addDynamoDBResources = async (db_name) => {
+const _addDynamoDBResources = async (db_name, range_key) => {
     const resources = [
         'dynamodb'
     ]
     return addResources(resources, {
-        db_name
+        db_name,
+        range_key
     });
 
 }
@@ -111,7 +112,7 @@ exports.init = async args => {
     await _verifyPackageJsonExists();
     await _addPackageJsonPackages();
     await _iamRoles();
-    await _addDynamoDBResources(args.db_name);
+    await _addDynamoDBResources(args.db_name, args.range_key);
     await _addEnvironmentVariables(args.db_name);
     await _addServerlessVariables();
     await _addPlugin();

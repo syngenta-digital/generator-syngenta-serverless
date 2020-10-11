@@ -1149,10 +1149,12 @@ describe('Syngenta Severless Generator Test Suite', () => {
                 })
                 describe('#dynamodb', () => {
                     const db_name = 'serverless-test';
+                    const range_key = 'range_id';
                     before(async () => {
                         // delete mysql stuff?
                         await dynamodb.init({
-                            db_name
+                            db_name,
+                            range_key
                         });
                     });
                     it('make sure package json is correct', () => {
@@ -1170,7 +1172,9 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             assert.equal(resource_exists, true);
                             const read_file = await file.read_yaml(_path);
                             const { Resources } = read_file;
+                            console.log('logging Resources', JSON.stringify(Resources, null, 4));
                             assert.notEqual(Resources[validResourceName(db_name)], undefined);
+                            // make sure range key exists, and id?
                             resolve();
                         });
                     });
