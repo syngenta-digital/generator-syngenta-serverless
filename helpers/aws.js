@@ -10,26 +10,25 @@ const _write_default_config = async (region) => {
 }
 
 const _does_env_variable_exist = async () => {
+    // This is way too complicated to try to do for windows. 
+    if(process.platform === "win") {
+        console.warn('UNSUPPORTED OPERATING SYSTEM FOR AUTOMATIC LOADING OF AWS_SDK_LOAD_CONFIG, PLEASE MAKE SURE YOU ADD THIS TO YOUR ENVIRONMENT ON YOUR RESPECTIVE OS.')
+        return true;
+    }
     const env_variable = process.env.AWS_SDK_LOAD_CONFIG;
     if(!env_variable || (env_variable && env_variable == 1)) {
         const shell = process.env.SHELL;
-        let _path = '';
+        let _path = null;
     
         switch(shell) {
             case '/bin/bash':
-                // does ~/.bashrc exist?
-                const test_path = `${os.homedir()}/.bashrc`;
-                const exists = await file.path_exists(test_path);
-                if(!exists) {
-                    _path = `${os.homedir()}/.bash_profile`;
-                }
-                
+                _path = `${os.homedir()}/.bashrc`;                
                 break;
             case '/bin/zsh':
                 _path = `${os.homedir()}/.zshrc`;
                 break;
             default:
-                console.warn('Unsupported shell for automatic loading of AWS_SDK_LOAD_CONFIG env variable.')
+                console.warn('UNSUPPORTED OPERATING SYSTEM FOR AUTOMATIC LOADING OF AWS_SDK_LOAD_CONFIG, PLEASE MAKE SURE YOU ADD THIS TO YOUR ENVIRONMENT ON YOUR RESPECTIVE SHELL CONFIGURATION.')
                 return true;
         }
     
