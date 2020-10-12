@@ -1,5 +1,5 @@
 {
-    "name": "generator-syngenta-serverless",
+    "name": "@syngenta-digital/generator-serverless",
     "version": "1.0.0",
     "description": "",
     "main": "app/index.js",
