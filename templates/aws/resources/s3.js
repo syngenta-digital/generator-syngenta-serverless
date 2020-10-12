@@ -18,11 +18,14 @@ exports.bucket = (bucket_name) => {
 }
 
 exports.public_policy = (bucket_name) => {
+    const _resource = `arn:aws:s3:::\${self:provider.stackTags.name}-${bucket_name}-storage/*`;
     return {
         // [`AttachmentsBucketAllowPublicReadPolicy${bucket_name}`]: {
             Type: 'AWS::S3::BucketPolicy',
             Properties: {
-                Bucket: `!Ref ${validResourceName(bucket_name)}Storage`,
+                Bucket: {
+                    Ref: `${validResourceName(bucket_name)}Storage`
+                },
                 PolicyDocument: {
                     Version: "2012-10-17",
                     Statement: [
@@ -32,7 +35,7 @@ exports.public_policy = (bucket_name) => {
                                 "s3:GetObject",
                                 "s3:GetObjectAcl"
                             ],
-                            Resource: `arn:aws:s3:::\${self:provider.stackTags.name}-${bucket_name}-storage/*`,
+                            Resource: _resource,
                             Principal: "*"
                         }
                     ]
