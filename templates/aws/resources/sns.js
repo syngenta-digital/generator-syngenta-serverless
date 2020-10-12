@@ -4,7 +4,7 @@ const { validResourceName } = require('../../../helpers/string');
 exports.topic = (topic_name, dedup = false) => {
     const template = {
         ContentBasedDeduplication: dedup,
-        DisplayName: topic_name,
+        DisplayName: topic_name.charAt(0).toUpperCase() + topic_name.slice(1),
         TopicName: `\${self:provider.stage}-${topic_name}`
     }
 
@@ -24,7 +24,12 @@ exports.subscription = (topic_name, sqs_queue_name) => {
               ]
            },
            Region: "${self:provider.region}",
-           TopicArn: `arn:aws:sns:\${self:provider.region}:\${self:custom.accounts.\${self:provider.stage}}:\${self:provider.stage}-${topic_name}`,
+           TopicArn: {
+               'Fn::GetAtt': [
+                  `${validResourceName(topic_name)}Topic`,
+                  "Arn"
+               ]
+            },
            RawMessageDelivery: true,
            FilterPolicy: {
               docusign_event: [
