@@ -264,15 +264,18 @@ describe('Syngenta Severless Generator Test Suite', () => {
 
         it('default profile exists in config', async () => {
             const default_config_profile_exists = await aws_config_helper.doesProfileExist('default', true);
-            assert(default_config_profile_exists, true);
+            assert.equal(default_config_profile_exists, true);
         });
         it('config profile exists in config', async () => {
             const default_config_profile_exists = await aws_config_helper.doesProfileExist(config_profile_name, true);
-            assert(default_config_profile_exists, true);
+            assert.equal(default_config_profile_exists, true);
         });
         it('config profile exists in config', async () => {
             const default_credentials_profile_exists = await aws_config_helper.doesProfileExist(credentials_profile_name);
-            assert(default_credentials_profile_exists, true);
+            assert.equal(default_credentials_profile_exists, true);
+        });
+        it('AWS_SDK_LOAD_CONFIG exists in env', async () => {
+            assert.equal(process.env.AWS_SDK_LOAD_CONFIG, '1');
         });
     });
     describe('Resource Generator', () => {
