@@ -107,31 +107,43 @@ exports.default = async _this => {
 
   const _runtime = runtime.runtime || 'node';
 
-  const base = [
+  const base_questions = [
     {
       type    : 'input',
       name    : 'runtime_version',
       message : `What runtime version would you like?\n\nsupported: ${_runtimeMapper[_runtime]}\n\n(default: latest stable version)\n\n>`
-    },
-    {
-      type    : 'input',
-      name    : 'app',
-      message : `What would you like to call your serverless app?`
-    },
-    {
-      type    : 'input',
-      name    : 'service',
-      message : `What would you like to call your serverless service?`
-    },
+    }
+  ];
+
+  let serverless_questions = [    {
+    type    : 'input',
+    name    : 'app',
+    message : `What would you like to call your serverless app?`
+  },
+  {
+    type    : 'input',
+    name    : 'service',
+    message : `What would you like to call your serverless service?`
+  }]
+
+  const aws_profiles_questions = [
     {
       type    : 'input',
       name    : 'aws_profiles',
       message : `Would you like to add any AWS profiles to your config?`
     }
-  ];
+  ]
 
-  const base_questions =  await _this.prompt(base);
-  const aws_profiles = acceptableBoolean(base_questions.aws_profiles);
+  const _base_questions =  await _this.prompt(base_questions);
+  let _serverless_questions = await _this.prompt(serverless_questions);
+
+  while(!_serverless_questions.app || !_serverless_questions.service) {
+    _serverless_questions = await _this.prompt(serverless_questions);
+  }
+
+  const _aws_profiles_questions = await _this.prompt(aws_profiles_questions);
+
+  const aws_profiles = acceptableBoolean(_aws_profiles_questions.aws_profiles);
 
   if(aws_profiles) {
     STATE = "SET_UP_PROFILE";
@@ -142,6 +154,7 @@ exports.default = async _this => {
 
   return {
     ...runtime,
-    ...base_questions
+    ..._base_questions,
+    ..._serverless_questions
   };
 }
