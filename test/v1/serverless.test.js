@@ -1175,7 +1175,6 @@ describe('Syngenta Severless Generator Test Suite', () => {
                             assert.equal(resource_exists, true);
                             const read_file = await file.read_yaml(_path);
                             const { Resources } = read_file;
-                            console.log('logging Resources', JSON.stringify(Resources, null, 4));
                             assert.notEqual(Resources[validResourceName(db_name)], undefined);
                             // make sure range key exists, and id?
                             resolve();

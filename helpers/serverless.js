@@ -68,8 +68,8 @@ const _initServerless = async (app, service, runtime = 'nodejs12.x') => {
 const _addBaseFiles = async (runtime = 'nodejs12.x') => {
     const directories = [
         '.circleci',
-        '.github',
-        'application'
+        '.github'
+        // 'application'
     ]
     await file.doesLocalDirectoriesExist(directories);
     const templates = [
@@ -103,7 +103,7 @@ const _addBaseFiles = async (runtime = 'nodejs12.x') => {
     }
 
     await _initEnv();
-    await file.copy_directory(`${file.root()}templates/application`, `${file.root(true)}/application`);
+    // await file.copy_directory(`${file.root()}templates/application`, `${file.root(true)}/application`);
 
     return true;
 }
