@@ -20,6 +20,8 @@ $ npm install yeoman
 $ npm install @syngenta-digital/generator-serverless
 ```
 
+OR
+
 ```NPM
 $ npx -p yo -p @syngenta-digital/generator-serverless  -c 'yo @syngenta-digital/serverless'
 ```
